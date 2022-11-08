@@ -50,7 +50,7 @@ config = {
 run_name = f'{config["dataset_name"]}_{config["model_name"]}_{datetime.now().strftime("%m/%d-%H:%M:%S")}'
 
 wandb.login()
-wandb.init(
+run = wandb.init(
     project="maicon-change-detection",
     name=run_name,
     config=config
@@ -160,6 +160,10 @@ infer_dir = f'./infer_res/{run_name}'
 os.makedirs(infer_dir)
     
 valid_epoch.infer_vis(valid_loader, save=True, slide=False, save_dir=infer_dir)
+
+model_artifact = wandb.Artifact(name=run_name, type='model')
+model_artifact.add_file(local_path=f'./checkpoints/{run_name}.pth', name='model_weights')
+run.log_artifact(model_artifact)
 
 wandb.alert(
     title = "Train finished",
