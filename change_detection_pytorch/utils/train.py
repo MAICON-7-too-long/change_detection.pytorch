@@ -78,8 +78,9 @@ class Epoch:
                     for metric_fn in self.metrics:
                         metric_value = metric_fn(y_pred, y).detach().cpu().numpy()
                         metrics_meters[metric_fn.__name__].add(metric_value)
-                    metrics_logs = {"val" + k: v.mean for k, v in metrics_meters.items()}
+                    metrics_logs = {"evaluate_" + k: v.mean for k, v in metrics_meters.items()}
                     logs.update(metrics_logs)
+                    self.wandb.log(metrics_logs)
 
                     if self.verbose:
                         s = self._format_logs(logs)
@@ -122,7 +123,7 @@ class Epoch:
                 # update loss logs
                 loss_value = loss.detach().cpu().numpy()
                 loss_meter.add(loss_value)
-                loss_logs = {self.loss.__name__: loss_meter.mean}
+                loss_logs = {self.__name__ + "_" + self.loss.__name__: loss_meter.mean}
                 logs.update(loss_logs)
                 self.wandb.log(loss_logs)
 
@@ -130,7 +131,7 @@ class Epoch:
                 for metric_fn in self.metrics:
                     metric_value = metric_fn(y_pred, y).detach().cpu().numpy()
                     metrics_meters[metric_fn.__name__].add(metric_value)
-                metrics_logs = {k: v.mean for k, v in metrics_meters.items()}
+                metrics_logs = {self.__name__ + "_" + k: v.mean for k, v in metrics_meters.items()}
                 logs.update(metrics_logs)
                 self.wandb.log(metrics_logs)
 

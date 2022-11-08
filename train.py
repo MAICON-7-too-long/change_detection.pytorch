@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 
 import torch
 from torch.utils.data import DataLoader, Dataset
@@ -7,7 +8,7 @@ import wandb
 from wandb import AlertLevel
 
 import change_detection_pytorch as cdp
-from change_detection_pytorch.datasets import AIHUB_Dataset
+from change_detection_pytorch.datasets import MAICON_Dataset
 from change_detection_pytorch.utils.lr_scheduler import GradualWarmupScheduler
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -27,14 +28,14 @@ DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 # }
 
 config = {
-    "model_name" : "DeepLabV3",
+    "model_name" : "UNet",
     "model_config" : {
         "encoder_name" : "resnet34",
         "encoder_weights" : "imagenet",
         "siam_encoder" : True,
         "fusion_form" : "concat",
     },
-    "dataset_name" : "AIHub",
+    "dataset_name" : "MAICON",
     "dataset_config" : {
         "train_batch_size" : 64,
         "test_batch_size" : 16
@@ -53,31 +54,30 @@ wandb.init(
     config=config
 )
 
-# model = cdp.Unet(
-#     in_channels=3,  # model input channels (1 for gray-scale images, 3 for RGB, etc.)
-#     classes=2,  # model output channels (number of classes in your datasets)
-#     **config["model_config"]
-# )
-
-model = cdp.DeepLabV3(
+model = cdp.Unet(
     in_channels=3,  # model input channels (1 for gray-scale images, 3 for RGB, etc.)
     classes=2,  # model output channels (number of classes in your datasets)
     **config["model_config"]
 )
 
+# model = cdp.DeepLabV3(
+#     in_channels=3,  # model input channels (1 for gray-scale images, 3 for RGB, etc.)
+#     classes=2,  # model output channels (number of classes in your datasets)
+#     **config["model_config"]
+# )
 
-train_dataset = AIHUB_Dataset('/etc/maicon/data/aihub/train',
+
+train_dataset = MAICON_Dataset('/etc/maicon/data/maicon/train',
                                  sub_dir_1='input1',
                                  sub_dir_2='input2',
                                  img_suffix='.png',
                                  ann_dir='/etc/maicon/data/aihub/train/mask',
                                  debug=False)
 
-valid_dataset = AIHUB_Dataset('/etc/maicon/data/aihub/val',
+valid_dataset = MAICON_Dataset('/etc/maicon/data/maicon/val',
                                  sub_dir_1='input1',
                                  sub_dir_2='input2',
                                  img_suffix='.png',
-                                 ann_dir='/etc/maicon/data/aihub/val/mask',
                                  debug=False,
                                  test_mode=True)
 
@@ -134,11 +134,11 @@ for i in range(MAX_EPOCH):
 
     # do something (save model, change lr, etc.)
     # !
-    # if max_score < valid_logs['iou']:
-    #     max_score = valid_logs['iou']
-    #     print('max_score', max_score)
-    #     torch.save(model, f'./checkpoints/{run_name}.pth')
-    #     print('Model saved!')
+    if max_score < train_logs['iou']:
+        max_score = train_logs['iou']
+        print('max_score', max_score)
+        torch.save(model, f'./checkpoints/{run_name}.pth')
+        print('Model saved!')
 
 # save results (change maps)
 """
@@ -154,7 +154,10 @@ Note: if you use sliding window inference, set:
 
 """
 # !
-# valid_epoch.infer_vis(valid_loader, save=True, slide=False, save_dir='./infer_res')
+infer_dir = f'./infer_res/{run_name}'
+os.makedirs(infer_dir)
+    
+valid_epoch.infer_vis(valid_loader, save=True, slide=False, save_dir=infer_dir)
 
 wandb.alert(
     title = "Train finished",
