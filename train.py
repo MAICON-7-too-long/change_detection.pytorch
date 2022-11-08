@@ -13,6 +13,8 @@ from change_detection_pytorch.utils.lr_scheduler import GradualWarmupScheduler
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+print(DEVICE)
+
 # config = {
 #     "model_name" : "Unet",
 #     "model_config" : {
@@ -67,14 +69,14 @@ model = cdp.Unet(
 # )
 
 
-train_dataset = MAICON_Dataset('/etc/maicon/data/maicon/train',
+train_dataset = MAICON_Dataset('/workspace/data/01_data/train',
                                  sub_dir_1='input1',
                                  sub_dir_2='input2',
                                  img_suffix='.png',
-                                 ann_dir='/etc/maicon/data/aihub/train/mask',
+                                 ann_dir='/workspace/data/01_data/train/mask',
                                  debug=False)
 
-valid_dataset = MAICON_Dataset('/etc/maicon/data/maicon/val',
+valid_dataset = MAICON_Dataset('/workspace/data/01_data/test',
                                  sub_dir_1='input1',
                                  sub_dir_2='input2',
                                  img_suffix='.png',
