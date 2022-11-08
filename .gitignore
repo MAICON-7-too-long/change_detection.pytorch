@@ -117,3 +117,4 @@ venv.bak/
 
 checkpoints
 wandb
+infer_res

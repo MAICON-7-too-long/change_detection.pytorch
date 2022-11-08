@@ -9,13 +9,14 @@ from .meter import AverageValueMeter
 
 class Epoch:
 
-    def __init__(self, model, loss, metrics, stage_name, device='cpu', verbose=True):
+    def __init__(self, model, loss, metrics, stage_name, device='cpu', wandb=None, verbose=True):
         self.model = model
         self.loss = loss
         self.metrics = metrics
         self.stage_name = stage_name
         self.verbose = verbose
         self.device = device
+        self.wandb = wandb
 
         self._to_device()
 
@@ -42,7 +43,7 @@ class Epoch:
         return data.long() if data.ndim <= 3 else data.squeeze().long()
 
     def infer_vis(self, dataloader, save=True, evaluate=False, slide=False, image_size=1024,
-                  window_size=256, save_dir='./res', suffix='.tif'):
+                  window_size=256, save_dir='./infer_res', suffix='.tif'):
         """
         Infer and save results. (debugging)
         Note: Currently only batch_size=1 is supported.
@@ -77,7 +78,7 @@ class Epoch:
                     for metric_fn in self.metrics:
                         metric_value = metric_fn(y_pred, y).detach().cpu().numpy()
                         metrics_meters[metric_fn.__name__].add(metric_value)
-                    metrics_logs = {k: v.mean for k, v in metrics_meters.items()}
+                    metrics_logs = {"val" + k: v.mean for k, v in metrics_meters.items()}
                     logs.update(metrics_logs)
 
                     if self.verbose:
@@ -123,6 +124,7 @@ class Epoch:
                 loss_meter.add(loss_value)
                 loss_logs = {self.loss.__name__: loss_meter.mean}
                 logs.update(loss_logs)
+                self.wandb.log(loss_logs)
 
                 # update metrics logs
                 for metric_fn in self.metrics:
@@ -130,6 +132,7 @@ class Epoch:
                     metrics_meters[metric_fn.__name__].add(metric_value)
                 metrics_logs = {k: v.mean for k, v in metrics_meters.items()}
                 logs.update(metrics_logs)
+                self.wandb.log(metrics_logs)
 
                 if self.verbose:
                     s = self._format_logs(logs)
@@ -140,13 +143,14 @@ class Epoch:
 
 class TrainEpoch(Epoch):
 
-    def __init__(self, model, loss, metrics, optimizer, device='cpu', verbose=True):
+    def __init__(self, model, loss, metrics, optimizer, device='cpu', wandb=None, verbose=True):
         super().__init__(
             model=model,
             loss=loss,
             metrics=metrics,
             stage_name='train',
             device=device,
+            wandb=wandb,
             verbose=verbose,
         )
         self.optimizer = optimizer
@@ -165,13 +169,14 @@ class TrainEpoch(Epoch):
 
 class ValidEpoch(Epoch):
 
-    def __init__(self, model, loss, metrics, device='cpu', verbose=True):
+    def __init__(self, model, loss, metrics, device='cpu', wandb=None, verbose=True):
         super().__init__(
             model=model,
             loss=loss,
             metrics=metrics,
             stage_name='valid',
             device=device,
+            wandb=wandb,
             verbose=verbose,
         )
 

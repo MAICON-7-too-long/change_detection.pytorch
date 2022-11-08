@@ -8,7 +8,7 @@ from .transforms.albu import ChunkImage, ToTensorTest
 
 
 class AIHUB_Dataset(CustomDataset):
-    """LEVIR-CD dataset"""
+    """AIHUB_Dataset"""
 
     def __init__(self, img_dir, sub_dir_1='input1', sub_dir_2='input2', ann_dir=None, img_suffix='.png', seg_map_suffix='.png', transform=None, split=None, data_root=None, test_mode=False, size=256, debug=False):
         super().__init__(img_dir, sub_dir_1, sub_dir_2, ann_dir, img_suffix, seg_map_suffix, transform, split, data_root, test_mode, size, debug)
@@ -17,15 +17,14 @@ class AIHUB_Dataset(CustomDataset):
         """Set the default transformation."""
 
         default_transform = A.Compose([
-            A.RandomCrop(self.size, self.size),
-            # A.ShiftScaleRotate(),
+            A.Resize(self.size, self.size),
             A.Normalize(),
             ToTensorV2()
         ], additional_targets={'image_2': 'image'})
         return default_transform
 
     def get_test_transform(self):
-    """Set the test transformation."""
+        """Set the test transformation."""
 
         test_transform = A.Compose([
             A.Normalize(),

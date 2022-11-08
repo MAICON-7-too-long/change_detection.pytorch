@@ -4,13 +4,14 @@ from torch.utils.data import DataLoader, Dataset
 import wandb
 
 import change_detection_pytorch as cdp
-from change_detection_pytorch.datasets import LEVIR_CD_Dataset, SVCD_Dataset
+from change_detection_pytorch.datasets import AIHUB_Dataset
 from change_detection_pytorch.utils.lr_scheduler import GradualWarmupScheduler
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 config = {
     "dataset" : "LEVIR_CD",
+    "model_name" : "Unet",
     "encoder_name" : "resnet34",
     "encoder_weights" : "imagenet",
     "siam_encoder" : True,
@@ -23,7 +24,7 @@ config = {
 wandb.login()
 wandb.init(
     project="maicon-change-detection",
-    name="local_test_1",
+    name="aihub_test_unet_1",
     config=config
 )
 
@@ -36,23 +37,23 @@ model = cdp.Unet(
     fusion_form=config["fusion_form"],  # the form of fusing features from two branches. e.g. concat, sum, diff, or abs_diff.
 )
 
-train_dataset = LEVIR_CD_Dataset('/etc/maicon/data/LEVIR-CD/train',
-                                 sub_dir_1='A',
-                                 sub_dir_2='B',
+train_dataset = AIHUB_Dataset('/etc/maicon/data/aihub/train',
+                                 sub_dir_1='input1',
+                                 sub_dir_2='input2',
                                  img_suffix='.png',
-                                 ann_dir='/etc/maicon/data/LEVIR-CD/train/label',
+                                 ann_dir='/etc/maicon/data/aihub/train/mask',
                                  debug=False)
 
-valid_dataset = LEVIR_CD_Dataset('/etc/maicon/data/LEVIR-CD/test',
-                                 sub_dir_1='A',
-                                 sub_dir_2='B',
+valid_dataset = AIHUB_Dataset('/etc/maicon/data/aihub/val',
+                                 sub_dir_1='input1',
+                                 sub_dir_2='input2',
                                  img_suffix='.png',
-                                 ann_dir='/etc/maicon/data/LEVIR-CD/test/label',
+                                 ann_dir='/etc/maicon/data/aihub/val/mask',
                                  debug=False,
                                  test_mode=True)
 
-train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=0)
-valid_loader = DataLoader(valid_dataset, batch_size=1, shuffle=False, num_workers=0)
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=0)
+valid_loader = DataLoader(valid_dataset, batch_size=16, shuffle=False, num_workers=0)
 
 loss = cdp.utils.losses.CrossEntropyLoss()
 metrics = [
@@ -98,15 +99,15 @@ for i in range(MAX_EPOCH):
 
     print('\nEpoch: {}'.format(i))
     train_logs = train_epoch.run(train_loader)
-    valid_logs = valid_epoch.run(valid_loader)
+    # valid_logs = valid_epoch.run(valid_loader)
     scheduler_steplr.step()
 
     # do something (save model, change lr, etc.)
-    if max_score < valid_logs['fscore']:
-        max_score = valid_logs['fscore']
-        print('max_score', max_score)
-        torch.save(model, './best_model.pth')
-        print('Model saved!')
+    # if max_score < valid_logs['fscore']:
+    #     max_score = valid_logs['fscore']
+    #     print('max_score', max_score)
+    #     torch.save(model, './best_model.pth')
+    #     print('Model saved!')
 
 # save results (change maps)
 """
@@ -121,6 +122,6 @@ Note: if you use sliding window inference, set:
     ], additional_targets={'image_2': 'image'})
 
 """
-valid_epoch.infer_vis(valid_loader, save=True, slide=False, save_dir='./infer_res')
+# valid_epoch.infer_vis(valid_loader, save=True, slide=False, save_dir='./infer_res')
 
 wandb.finish()
