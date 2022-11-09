@@ -2,6 +2,9 @@ import os.path as osp
 import sys
 
 import torch
+from torch import autocast
+from torch.cuda.amp import GradScaler
+
 from tqdm import tqdm as tqdm
 
 from .meter import AverageValueMeter
@@ -31,7 +34,7 @@ class Epoch:
         s = ', '.join(str_logs)
         return s
 
-    def batch_update(self, x1, x2, y):
+    def batch_update(self, x1, x2, y, scaler):
         raise NotImplementedError
 
     def on_epoch_start(self):
@@ -111,14 +114,14 @@ class Epoch:
         logs = {}
         loss_meter = AverageValueMeter()
         metrics_meters = {metric.__name__: AverageValueMeter() for metric in self.metrics}
-
+        scaler = GradScaler()
         with tqdm(dataloader, desc=self.stage_name, file=sys.stdout, disable=not (self.verbose)) as iterator:
             for (x1, x2, y, filename) in iterator:
 
                 x1, x2, y = self.check_tensor(x1, False), self.check_tensor(x2, False), \
                             self.check_tensor(y, True)
                 x1, x2, y = x1.to(self.device), x2.to(self.device), y.to(self.device)
-                loss, y_pred = self.batch_update(x1, x2, y)
+                loss, y_pred = self.batch_update(x1, x2, y, scaler)
 
                 # update loss logs
                 loss_value = loss.detach().cpu().numpy()
@@ -159,12 +162,17 @@ class TrainEpoch(Epoch):
     def on_epoch_start(self):
         self.model.train()
 
-    def batch_update(self, x1, x2, y):
+    def batch_update(self, x1, x2, y, scaler):
         self.optimizer.zero_grad()
-        prediction = self.model.forward(x1, x2)
-        loss = self.loss(prediction, y)
-        loss.backward()
-        self.optimizer.step()
+	
+        with autocast(device_type='cuda', dtype=torch.float16):
+            prediction = self.model.forward(x1, x2)
+            loss = self.loss(prediction, y)
+
+        scaler.scale(loss).backward()
+        scaler.step(self.optimizer)
+        scaler.update()
+
         return loss, prediction
 
 
@@ -184,7 +192,7 @@ class ValidEpoch(Epoch):
     def on_epoch_start(self):
         self.model.eval()
 
-    def batch_update(self, x1, x2, y):
+    def batch_update(self, x1, x2, y, scaler):
         with torch.no_grad():
             prediction = self.model.forward(x1, x2)
             loss = self.loss(prediction, y)
