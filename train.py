@@ -13,6 +13,9 @@ import change_detection_pytorch as cdp
 from change_detection_pytorch.datasets import MAICON_Dataset, LEVIR_CD_Dataset
 from change_detection_pytorch.utils.lr_scheduler import GradualWarmupScheduler
 
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 @click.command()
