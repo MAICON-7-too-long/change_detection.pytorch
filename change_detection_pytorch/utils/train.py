@@ -1,7 +1,9 @@
 import os.path as osp
 import sys
+import math
 
 import torch
+from torchvision.utils import save_image
 from tqdm import tqdm as tqdm
 
 from .meter import AverageValueMeter
@@ -9,13 +11,14 @@ from .meter import AverageValueMeter
 
 class Epoch:
 
-    def __init__(self, model, loss, metrics, stage_name, device='cpu', wandb=None, verbose=True):
+    def __init__(self, model, loss, metrics, stage_name, device='cpu', classes=1, wandb=None, verbose=True):
         self.model = model
         self.loss = loss
         self.metrics = metrics
         self.stage_name = stage_name
         self.verbose = verbose
         self.device = device
+        self.classes = classes
         self.wandb = wandb
 
         self._to_device()
@@ -43,7 +46,7 @@ class Epoch:
         return data.long() if data.ndim <= 3 else data.squeeze().long()
 
     def infer_vis(self, dataloader, save=True, evaluate=False, slide=False, image_size=1024,
-                  window_size=256, save_dir='./infer_res', suffix='.tif'):
+                  window_size=256, save_dir='./infer_res', suffix='.png'):
         """
         Infer and save results. (debugging)
         Note: Currently only batch_size=1 is supported.
@@ -56,6 +59,8 @@ class Epoch:
         self.model.eval()
         logs = {}
         metrics_meters = {metric.__name__: AverageValueMeter() for metric in self.metrics}
+
+        self.infer_table = self.wandb.Table(columns=['Name', 'Image1', 'Image2'])
 
         with tqdm(dataloader, desc=self.stage_name, file=sys.stdout, disable=not (self.verbose)) as iterator:
             for (x1, x2, y, filename) in iterator:
@@ -88,21 +93,39 @@ class Epoch:
 
                 if save:
                     y_pred = torch.argmax(y_pred, dim=1).squeeze().cpu().numpy().round()
-                    y_pred = y_pred * 255
-                    filename = filename[0].split('.')[0] + suffix
+                    # y_pred = y_pred * 255
 
-                    if slide:
-                        inf_seg_maps = []
-                        window_num = image_size // window_size
-                        window_idx = [i for i in range(0, window_num ** 2 + 1, window_num)]
-                        for row_idx in range(len(window_idx) - 1):
-                            inf_seg_maps.append(np.concatenate([y_pred[i] for i in range(window_idx[row_idx],
-                                                                                         window_idx[row_idx + 1])], axis=1))
-                        inf_seg_maps = np.concatenate([row for row in inf_seg_maps], axis=0)
-                        cv2.imwrite(osp.join(save_dir, filename), inf_seg_maps)
-                    else:
-                        # To be verified
-                        cv2.imwrite(osp.join(save_dir, filename), y_pred)
+                    for (fname, xx1, xx2, yy_pred) in zip(filename, x1, x2, y_pred):
+                        fname = fname.split('.')[0] + suffix
+
+                        img1 = self.wandb.Image(xx1)
+                        # img2 = self.wandb.Image(xx2)
+                        img2 = self.wandb.Image(xx2, masks = {
+                            "prediction" : {
+                                "mask_data" : yy_pred,
+                                "class_labels" : { i+1 : str(i+1) for i in range(self.classes)} 
+                            },
+                        })
+                        
+                        self.infer_table.add_data(fname, img1, img2)
+
+                        cv2.imwrite(osp.join(save_dir, fname), yy_pred)
+                        # save_image(torch.tensor(yy_pred, dtype=torch.long), osp.join(save_dir, fname + "by_cv2" + suffix))
+
+                    # if slide:
+                    #     inf_seg_maps = []
+                    #     window_num = image_size // window_size
+                    #     window_idx = [i for i in range(0, window_num ** 2 + 1, window_num)]
+                    #     for row_idx in range(len(window_idx) - 1):
+                    #         inf_seg_maps.append(np.concatenate([y_pred[i] for i in range(window_idx[row_idx],
+                    #                                                                      window_idx[row_idx + 1])], axis=1))
+                    #     inf_seg_maps = np.concatenate([row for row in inf_seg_maps], axis=0)
+                    #     cv2.imwrite(osp.join(save_dir, filename), inf_seg_maps)
+                    # else:
+                    #     # To be verified
+                    #     cv2.imwrite(osp.join(save_dir, filename), y_pred)
+            
+            self.wandb.log({"Table" : self.infer_table})
 
     def run(self, dataloader):
 
@@ -123,7 +146,7 @@ class Epoch:
                 # update loss logs
                 loss_value = loss.detach().cpu().numpy()
                 loss_meter.add(loss_value)
-                loss_logs = {self.__name__ + "_" + self.loss.__name__: loss_meter.mean}
+                loss_logs = {self.stage_name + "_" + self.loss.__name__: loss_meter.mean}
                 logs.update(loss_logs)
                 self.wandb.log(loss_logs)
 
@@ -131,7 +154,7 @@ class Epoch:
                 for metric_fn in self.metrics:
                     metric_value = metric_fn(y_pred, y).detach().cpu().numpy()
                     metrics_meters[metric_fn.__name__].add(metric_value)
-                metrics_logs = {self.__name__ + "_" + k: v.mean for k, v in metrics_meters.items()}
+                metrics_logs = {self.stage_name + "_" + k: v.mean for k, v in metrics_meters.items()}
                 logs.update(metrics_logs)
                 self.wandb.log(metrics_logs)
 
@@ -144,13 +167,14 @@ class Epoch:
 
 class TrainEpoch(Epoch):
 
-    def __init__(self, model, loss, metrics, optimizer, device='cpu', wandb=None, verbose=True):
+    def __init__(self, model, loss, metrics, optimizer, device='cpu', classes=1, wandb=None, verbose=True):
         super().__init__(
             model=model,
             loss=loss,
             metrics=metrics,
             stage_name='train',
             device=device,
+            classes=1,
             wandb=wandb,
             verbose=verbose,
         )
@@ -170,13 +194,14 @@ class TrainEpoch(Epoch):
 
 class ValidEpoch(Epoch):
 
-    def __init__(self, model, loss, metrics, device='cpu', wandb=None, verbose=True):
+    def __init__(self, model, loss, metrics, device='cpu', classes=1, wandb=None, verbose=True):
         super().__init__(
             model=model,
             loss=loss,
             metrics=metrics,
             stage_name='valid',
             device=device,
+            classes=1,
             wandb=wandb,
             verbose=verbose,
         )
