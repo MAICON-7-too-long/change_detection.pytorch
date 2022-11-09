@@ -49,6 +49,10 @@ def main(config_name):
         model = cdp.DeepLabV3Plus(
             **config["model_config"]
         )
+    elif config["model_name"] == "PSPNet":
+        model = cdp.PSPNet(
+            **config["model_config"]
+        )
     else:
         raise Exception("Wrong model type")
 
