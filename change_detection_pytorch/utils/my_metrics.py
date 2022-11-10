@@ -33,7 +33,7 @@ def get_metric_function(metric_function_str):
 class Iou:
     def __init__(self, class_num:int=0):
         self.class_num = class_num
-        self.name = "mIoU" if class_num == 0 else "IoU" + class_num
+        self.name = "mIoU" if class_num == 0 else f'IoU{class_num}'
         
     def get_iou(self, outputs: torch.Tensor, labels: torch.Tensor):
         if self.class_num == 0:

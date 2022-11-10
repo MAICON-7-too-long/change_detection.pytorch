@@ -65,14 +65,14 @@ def main(config_name):
 
     # Dataset configure
     if config["dataset_name"] == "MAICON":
-        train_dataset = MAICON_Dataset('/etc/maicon/data/maicon/train',
+        train_dataset = MAICON_Dataset('/workspace/data/01_data/train',
                                     sub_dir_1='input1',
                                     sub_dir_2='input2',
                                     img_suffix='.png',
-                                    ann_dir='/etc/maicon/data/maicon/train/mask',
+                                    ann_dir='/workspace/data/01_data/train/mask',
                                     debug=False)
 
-        valid_dataset = MAICON_Dataset('/etc/maicon/data/maicon/test',
+        valid_dataset = MAICON_Dataset('/workspace/data/01_data/test',
                                         sub_dir_1='input1',
                                         sub_dir_2='input2',
                                         img_suffix='.png',
@@ -97,8 +97,14 @@ def main(config_name):
     else:
         raise Exception("Wrong dataset type")
 
+    # Split train dataset to train/test
+    train_size = int(0.8 * len(train_dataset))
+    test_size = len(train_dataset) - train_size
+    train_dataset, test_dataset = torch.utils.data.random_split(train_dataset, [train_size, test_size], generator=torch.Generator().manual_seed(42))
+    
     # DataLoader config
     train_loader = DataLoader(train_dataset, batch_size=config["dataset_config"]["train_batch_size"], shuffle=True, num_workers=4)
+    test_loader = DataLoader(test_dataset, batch_size=config["dataset_config"]["train_batch_size"], shuffle=True, num_workers=4)
     valid_loader = DataLoader(valid_dataset, batch_size=config["dataset_config"]["test_batch_size"], shuffle=False, num_workers=4)
 
     # Loss config
@@ -155,31 +161,47 @@ def main(config_name):
         wandb=wandb,
         verbose=True,
     )
+    
+    # Early stopper
+    early_stopping = cdp.utils.early_stopper.EarlyStopping(patience = 7, path = f'./checkpoints/{run_name}.pth', verbose = True)
 
     # train model for epochs
     max_score = 0
     MAX_EPOCH = config["train_config"]["epochs"]
 
     for i in range(MAX_EPOCH):
-
         print('\nEpoch: {}'.format(i))
         train_logs = train_epoch.run(train_loader)
         # ! we don't have ground truth in MAICON
+        test_logs = valid_epoch.run(test_loader)
         # valid_logs = valid_epoch.run(valid_loader)
         scheduler_steplr.step()
 
         # do something (save model, change lr, etc.)
-        if max_score < train_logs['train_iou_score']:
-            max_score = train_logs['train_iou_score']
-            print('max_score', max_score)
-            torch.save(model, f'./checkpoints/{run_name}.pth')
-            print('Model saved!')
+        # if max_score < test_logs['valid_mIoU']:
+        #     max_score = test_logs['valid_mIoU']
+        #     print('max_score', max_score)
+        #     torch.save(model, f'./checkpoints/{run_name}.pth')
+        #     print('Model saved!')
+            
+        early_stopping(test_logs['valid_mIoU'], model)
+        
+        if early_stopping.early_stop:
+            print('\nEarly Stopping')
+            wandb.alert(
+                title = "Early Stopping",
+                text = run_name,
+                level = AlertLevel.INFO
+            )
+            break
 
     # Inference for test images
     infer_dir = f'./infer_res/{run_name}'
     if not os.path.exists(infer_dir):
         os.makedirs(infer_dir)
 
+    best_model = torch.load(f'./checkpoints/{run_name}.pth')
+    valid_epoch.predict(best_model, valid_loader, save_dir=infer_dir)
     # valid_epoch.infer_vis(valid_loader, save=True, slide=False, save_dir=infer_dir)
 
     # Save model as wandb artifact

@@ -28,8 +28,8 @@ class Epoch:
     def _to_device(self):
         self.model.to(self.device)
         self.loss.to(self.device)
-        for metric in self.metrics:
-            metric.to(self.device)
+        # for metric in self.metrics:
+        #     metric.to(self.device)
 
     def _format_logs(self, logs):
         str_logs = ['{} - {:.4}'.format(k, v) for k, v in logs.items()]
@@ -47,7 +47,7 @@ class Epoch:
             return data if data.ndim <= 4 else data.squeeze()
         return data.long() if data.ndim <= 3 else data.squeeze().long()
 
-    def predict(self, best_model, dataloader, image_size=1024, save_dir='./infer_res', suffix='.png'):
+    def predict(self, best_model, dataloader, save_dir='./infer_res', suffix='.png'):
         import cv2
 
         self.model = best_model
@@ -77,7 +77,12 @@ class Epoch:
                     })
                     
                     self.infer_table.add_data(fname, img1, img2)
-
+                    
+                    if fname in ["1033.png", "1621.png", "1787.png", "1315.png", "2446.png", "1820.png"]:
+                        yy_pred = cv2.resize(yy_pred, (750, 750), interpolation=cv2.INTER_NEAREST)
+                    else:
+                        yy_pred = cv2.resize(yy_pred, (754, 754), interpolation=cv2.INTER_NEAREST)
+                    
                     cv2.imwrite(osp.join(save_dir, fname), yy_pred)
 
         self.wandb.log({"Table" : self.infer_table})
@@ -122,7 +127,7 @@ class Epoch:
                     # update metrics logs
                     for metric in self.metrics:
                         # metric_value = metric_fn(y_pred, y).detach().cpu().numpy()
-                        metric_value = metric.get_iou(y_pred, y)
+                        metric_value = metric.get_iou(y_pred.argmax(1), y).detach().cpu().numpy()
                         # metrics_meters[metric_fn.__name__].add(metric_value)
                         metrics_meters[metric.name].add(metric_value)
                     metrics_logs = {"evaluate_" + k: v.mean for k, v in metrics_meters.items()}
@@ -195,7 +200,7 @@ class Epoch:
                 # update metrics logs
                 for metric in self.metrics:
                         # metric_value = metric_fn(y_pred, y).detach().cpu().numpy()
-                        metric_value = metric.get_iou(y_pred, y)
+                        metric_value = metric.get_iou(y_pred.argmax(1), y).detach().cpu().numpy()
                         # metrics_meters[metric_fn.__name__].add(metric_value)
                         metrics_meters[metric.name].add(metric_value)
                 metrics_logs = {self.stage_name + "_" + k: v.mean for k, v in metrics_meters.items()}

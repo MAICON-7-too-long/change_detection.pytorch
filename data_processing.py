@@ -173,8 +173,39 @@ def vis_results(x_dir, y_dir):
     wandb.log({"Table" : infer_table})
 
     wandb.finish()
-        
 
+@cli.command()
+@click.argument("dir")
+def input_size_check(dir):
+    def check(file):
+        img1_file = os.path.join(dir, "input1", file)
+        img2_file = os.path.join(dir, "input2", file)
+        
+        img1 = Image.open(img1_file)
+        img2 = Image.open(img2_file)
+        
+        if img1.size == img2.size:
+            return True
+        else:
+            return False
+
+    res = Parallel(n_jobs=10)(delayed(check)(file) for file in tqdm(os.listdir(os.path.join(dir, "input1"))))
+    
+    if np.all(res):
+        print("Valid")
+    else:
+        print("Not valid")
+
+@cli.command()
+@click.argument("dir")
+def print_size(dir):
+    for file in os.listdir(os.path.join(dir)):
+        img = Image.open(os.path.join(dir, file))
+        w, h = img.size
+        
+        if w == 750:
+            print(file)
+        
 
 cli.add_command(split_image)
 cli.add_command(merge_mask)
@@ -182,6 +213,8 @@ cli.add_command(vis_mask)
 cli.add_command(valid_images)
 cli.add_command(split_mask)
 cli.add_command(vis_results)
+cli.add_command(input_size_check)
+cli.add_command(print_size)
 
 if __name__ == "__main__":
     cli()

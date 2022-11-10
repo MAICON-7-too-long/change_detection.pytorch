@@ -12,13 +12,13 @@
     "dataset_name" : "MAICON",
     "dataset_config" : {
         "train_batch_size" : 64,
-        "test_batch_size" : 16
+        "test_batch_size" : 4
     },
     "train_config" : {
         "loss" : "DiceLoss",
         "optimizer" : "Adam",
         "lr" : 0.0001,
         "gamma" : 0.1,
-        "epochs" : 60
+        "epochs" : 1
     }
 }
