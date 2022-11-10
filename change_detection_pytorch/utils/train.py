@@ -47,6 +47,41 @@ class Epoch:
             return data if data.ndim <= 4 else data.squeeze()
         return data.long() if data.ndim <= 3 else data.squeeze().long()
 
+    def predict(self, best_model, dataloader, image_size=1024, save_dir='./infer_res', suffix='.png'):
+        import cv2
+
+        self.model = best_model
+
+        self.model.eval()
+
+        self.infer_table = self.wandb.Table(columns=['Name', 'Image1', 'Image2'])
+
+        with tqdm(dataloader, desc=self.stage_name, file=sys.stdout, disable=not (self.verbose)) as iterator:
+            for (x1, x2, filename) in iterator:
+                x1, x2 = self.check_tensor(x1, False), self.check_tensor(x2, False)
+                x1, x2 = x1.float(), x2.float()
+                x1, x2 = x1.to(self.device), x2.to(self.device)
+                y_pred = self.model.forward(x1, x2)
+
+                y_pred = torch.argmax(y_pred, dim=1).squeeze().cpu().numpy().round()
+
+                for (fname, xx1, xx2, yy_pred) in zip(filename, x1, x2, y_pred):
+                    fname = fname.split('.')[0] + suffix
+
+                    img1 = self.wandb.Image(xx1)
+                    img2 = self.wandb.Image(xx2, masks = {
+                        "prediction" : {
+                            "mask_data" : yy_pred,
+                            "class_labels" : { i+1 : str(i+1) for i in range(self.classes)} 
+                        },
+                    })
+                    
+                    self.infer_table.add_data(fname, img1, img2)
+
+                    cv2.imwrite(osp.join(save_dir, fname), yy_pred)
+
+        self.wandb.log({"Table" : self.infer_table})
+
     def infer_vis(self, dataloader, save=True, evaluate=False, slide=False, image_size=1024, 
                     window_size=256, save_dir='./infer_res', suffix='.png'):
         """
@@ -60,12 +95,15 @@ class Epoch:
 
         self.model.eval()
         logs = {}
-        metrics_meters = {metric.__name__: AverageValueMeter() for metric in self.metrics}
+        metrics_meters = {metric.name: AverageValueMeter() for metric in self.metrics}
 
         self.infer_table = self.wandb.Table(columns=['Name', 'Image1', 'Image2'])
 
         with tqdm(dataloader, desc=self.stage_name, file=sys.stdout, disable=not (self.verbose)) as iterator:
-            for (x1, x2, y, filename) in iterator:
+            
+            # for (x1, x2, y, filename) in iterator:
+            for (x1, x2, filename) in iterator:
+                y = None
 
                 assert y is not None or not evaluate, "When the label is None, the evaluation mode cannot be turned on."
 
@@ -82,9 +120,11 @@ class Epoch:
 
                 if evaluate:
                     # update metrics logs
-                    for metric_fn in self.metrics:
-                        metric_value = metric_fn(y_pred, y).detach().cpu().numpy()
-                        metrics_meters[metric_fn.__name__].add(metric_value)
+                    for metric in self.metrics:
+                        # metric_value = metric_fn(y_pred, y).detach().cpu().numpy()
+                        metric_value = metric.get_iou(y_pred, y)
+                        # metrics_meters[metric_fn.__name__].add(metric_value)
+                        metrics_meters[metric.name].add(metric_value)
                     metrics_logs = {"evaluate_" + k: v.mean for k, v in metrics_meters.items()}
                     logs.update(metrics_logs)
                     self.wandb.log(metrics_logs)
@@ -135,7 +175,7 @@ class Epoch:
 
         logs = {}
         loss_meter = AverageValueMeter()
-        metrics_meters = {metric.__name__: AverageValueMeter() for metric in self.metrics}
+        metrics_meters = {metric.name: AverageValueMeter() for metric in self.metrics}
         scaler = GradScaler()
         with tqdm(dataloader, desc=self.stage_name, file=sys.stdout, disable=not (self.verbose)) as iterator:
             for (x1, x2, y, filename) in iterator:
@@ -153,9 +193,11 @@ class Epoch:
                 self.wandb.log(loss_logs)
 
                 # update metrics logs
-                for metric_fn in self.metrics:
-                    metric_value = metric_fn(y_pred, y).detach().cpu().numpy()
-                    metrics_meters[metric_fn.__name__].add(metric_value)
+                for metric in self.metrics:
+                        # metric_value = metric_fn(y_pred, y).detach().cpu().numpy()
+                        metric_value = metric.get_iou(y_pred, y)
+                        # metrics_meters[metric_fn.__name__].add(metric_value)
+                        metrics_meters[metric.name].add(metric_value)
                 metrics_logs = {self.stage_name + "_" + k: v.mean for k, v in metrics_meters.items()}
                 logs.update(metrics_logs)
                 self.wandb.log(metrics_logs)

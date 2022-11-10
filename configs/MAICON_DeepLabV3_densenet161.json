@@ -1,9 +1,8 @@
 {
-    "model_name" : "Unet",
+    "model_name" : "DeepLabV3",
     "model_config" : {
         "in_channels" : 3,
         "classes" : 4,
-        "activation" : "softmax2d",
         "encoder_name" : "resnet34",
         "encoder_weights" : "imagenet",
         "siam_encoder" : true,
@@ -15,7 +14,7 @@
         "test_batch_size" : 16
     },
     "train_config" : {
-        "loss" : "DiceLoss",
+        "loss" : "CrossEntropyLoss",
         "optimizer" : "Adam",
         "lr" : 0.0001,
         "gamma" : 0.1,

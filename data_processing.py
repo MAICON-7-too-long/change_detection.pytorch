@@ -9,6 +9,8 @@ import imghdr
 
 from tqdm import tqdm
 
+import wandb
+
 from joblib import Parallel, delayed
 
 
@@ -98,11 +100,88 @@ def valid_images(dir, format):
     else:
         print("Not valid")
 
+@cli.command()
+@click.argument("dir")
+@click.argument("mask_dir")
+def split_mask(dir, mask_dir):
+    if not os.path.exists(os.path.join(dir, "../", mask_dir)):
+        os.makedirs(os.path.join(dir, "../", mask_dir))
+
+    def merge(file):
+        mask_file = os.path.join(dir, file)
+        if os.path.isfile(mask_file):
+            mask = Image.open(mask_file)
+            w, h = mask.size
+            mask = np.array(mask)
+            mask_l = np.where(mask == 2, mask, 0)
+            mask_r = np.where(mask % 2 == 1, mask, 0)
+
+            mask = np.concatenate((mask_l, mask_r), axis = 1)
+            
+            mask_img = Image.fromarray(mask)
+
+            mask_img.save(os.path.join(dir, "../", mask_dir, file))
+
+    res = Parallel(n_jobs=10)(delayed(merge)(file) for file in tqdm(os.listdir(dir)))
+
+@cli.command()
+@click.argument("x_dir")
+@click.argument("y_dir")
+def vis_results(x_dir, y_dir):
+    submission_name = y_dir.split("/")[-1]
+
+    wandb.login()
+    wandb.init(
+        project="maicon-change-detection-submissions",
+        name=submission_name,
+        config={
+            "name" : submission_name
+        }
+    )
+
+    infer_table = wandb.Table(columns=['Name', 'Image'])
+
+    def upload(file):
+        img_path = os.path.join(x_dir, file)
+        mask_path = os.path.join(y_dir, file)
+
+        img = Image.open(img_path)
+        img = np.array(img)
+        # img = torch.tensor(img)
+
+        mask = Image.open(mask_path)
+        mask = np.array(mask)
+        # mask = torch.tensor(mask)
+        
+        wandb_img = wandb.Image(img, masks = {
+            "prediction" : {
+                "mask_data" : mask,
+                "class_labels" : { 
+                    1 : "New",
+                    2 : "Destory",
+                    3 : "Change"
+                } 
+            },
+        })
+
+        infer_table.add_data(file, wandb_img)
+
+    # res = Parallel(n_jobs=10)(delayed(upload)(file) for file in tqdm(os.listdir(x_dir)))
+    for file in tqdm(os.listdir(x_dir)):
+        upload(file)
+
+    wandb.log({"Table" : infer_table})
+
+    wandb.finish()
+        
+
 
 cli.add_command(split_image)
 cli.add_command(merge_mask)
 cli.add_command(vis_mask)
 cli.add_command(valid_images)
+cli.add_command(split_mask)
+cli.add_command(vis_results)
 
 if __name__ == "__main__":
     cli()

@@ -1,10 +1,9 @@
 {
-    "model_name" : "Unet",
+    "model_name" : "STANet",
     "model_config" : {
         "in_channels" : 3,
         "classes" : 4,
-        "activation" : "softmax2d",
-        "encoder_name" : "resnet34",
+        "encoder_name" : "efficientnet-b0",
         "encoder_weights" : "imagenet",
         "siam_encoder" : true,
         "fusion_form" : "concat"
@@ -12,10 +11,10 @@
     "dataset_name" : "MAICON",
     "dataset_config" : {
         "train_batch_size" : 64,
-        "test_batch_size" : 16
+        "test_batch_size" : 8
     },
     "train_config" : {
-        "loss" : "DiceLoss",
+        "loss" : "CrossEntropyLoss",
         "optimizer" : "Adam",
         "lr" : 0.0001,
         "gamma" : 0.1,

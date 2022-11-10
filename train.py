@@ -56,6 +56,10 @@ def main(config_name):
         model = cdp.PSPNet(
             **config["model_config"]
         )
+    elif config["model_name"] == "STANet":
+        model = cdp.STANet(
+            **config["model_config"]
+        )
     else:
         raise Exception("Wrong model type")
 
@@ -68,12 +72,13 @@ def main(config_name):
                                     ann_dir='/etc/maicon/data/maicon/train/mask',
                                     debug=False)
 
-        valid_dataset = MAICON_Dataset('/etc/maicon/data/maicon/val',
+        valid_dataset = MAICON_Dataset('/etc/maicon/data/maicon/test',
                                         sub_dir_1='input1',
                                         sub_dir_2='input2',
                                         img_suffix='.png',
                                         debug=False,
                                         test_mode=True)
+                                        
     elif config["dataset_name"] == "LEVIR_CD":
         train_dataset = LEVIR_CD_Dataset('/etc/maicon/data/LEVIR-CD/train',
                                         sub_dir_1='A',
@@ -99,15 +104,18 @@ def main(config_name):
     # Loss config
     if config["train_config"]["loss"] == "CrossEntropyLoss":
         loss = cdp.utils.losses.CrossEntropyLoss()
+    if config["train_config"]["loss"] == "DiceLoss":
+        loss = cdp.losses.DiceLoss(mode=cdp.losses.MULTICLASS_MODE, from_logits = True)
     else:
         raise Exception("Wrong loss type")
 
     # Metrics config
     metrics = [
-        cdp.utils.metrics.Fscore(activation='argmax2d'),
-        cdp.utils.metrics.Precision(activation='argmax2d'),
-        cdp.utils.metrics.Recall(activation='argmax2d'),
-        cdp.utils.metrics.IoU(activation='argmax2d'),
+        # cdp.utils.metrics.IoU(activation='softmax2d'),
+        cdp.utils.my_metrics.Iou(class_num=0),
+        cdp.utils.my_metrics.Iou(class_num=1),
+        cdp.utils.my_metrics.Iou(class_num=2),
+        cdp.utils.my_metrics.Iou(class_num=3),
     ]
 
     # Optimizer config
@@ -133,7 +141,7 @@ def main(config_name):
         metrics=metrics,
         optimizer=optimizer,
         device=DEVICE,
-        classes=2,
+        classes=config["model_config"]["classes"],
         wandb=wandb,
         verbose=True,
     )
@@ -143,7 +151,7 @@ def main(config_name):
         loss=loss,
         metrics=metrics,
         device=DEVICE,
-        classes=2,
+        classes=config["model_config"]["classes"],
         wandb=wandb,
         verbose=True,
     )
@@ -169,9 +177,10 @@ def main(config_name):
 
     # Inference for test images
     infer_dir = f'./infer_res/{run_name}'
-    os.makedirs(infer_dir)
-        
-    valid_epoch.infer_vis(valid_loader, save=True, slide=False, save_dir=infer_dir)
+    if not os.path.exists(infer_dir):
+        os.makedirs(infer_dir)
+
+    # valid_epoch.infer_vis(valid_loader, save=True, slide=False, save_dir=infer_dir)
 
     # Save model as wandb artifact
     model_artifact = wandb.Artifact(name=run_name, type='model')
