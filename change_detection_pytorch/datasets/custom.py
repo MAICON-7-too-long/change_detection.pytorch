@@ -188,7 +188,7 @@ class CustomDataset(Dataset):
         """
 
         ann = cv2.imread(img_info['ann']['ann_path'], cv2.IMREAD_GRAYSCALE)
-        ann = ann / 255 if not vis else ann
+        # ann = ann / 255 if not vis else ann
         return ann
 
     def prepare_img(self, idx):

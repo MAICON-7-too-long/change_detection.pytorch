@@ -9,6 +9,9 @@ from torch.utils.data import DataLoader, Dataset
 import wandb
 from wandb import AlertLevel
 
+import cv2
+import os.path as osp
+
 import change_detection_pytorch as cdp
 from change_detection_pytorch.datasets import MAICON_Dataset, LEVIR_CD_Dataset
 from change_detection_pytorch.utils.lr_scheduler import GradualWarmupScheduler
@@ -111,7 +114,7 @@ def main(config_name):
     # Loss config
     if config["train_config"]["loss"] == "CrossEntropyLoss":
         loss = cdp.utils.losses.CrossEntropyLoss()
-    if config["train_config"]["loss"] == "DiceLoss":
+    elif config["train_config"]["loss"] == "DiceLoss":
         loss = cdp.losses.DiceLoss(mode=cdp.losses.MULTICLASS_MODE, from_logits = True)
     else:
         raise Exception("Wrong loss type")
@@ -165,6 +168,11 @@ def main(config_name):
     
     # Early stopper
     early_stopping = cdp.utils.early_stopper.EarlyStopping(patience = 7, path = f'./checkpoints/{run_name}.pth', verbose = True)
+    
+    # Inference for test images
+    infer_dir = f'./infer_res/{run_name}'
+    if not os.path.exists(infer_dir):
+        os.makedirs(infer_dir)
 
     # train model for epochs
     # max_score = 0
@@ -176,6 +184,24 @@ def main(config_name):
         # ! we don't have ground truth in MAICON
         test_logs = valid_epoch.run(test_loader)
         # valid_logs = valid_epoch.run(valid_loader)
+        
+        # Debug for 
+        for (x1, x2, filename) in valid_loader:
+            x1, x2 = valid_epoch.check_tensor(x1, False), valid_epoch.check_tensor(x2, False)
+            x1, x2 = x1.float(), x2.float()
+            x1, x2 = x1.to(DEVICE), x2.to(DEVICE)
+            y_pred = model.forward(x1, x2)
+            
+            y_pred = torch.argmax(y_pred, dim=1).squeeze().cpu().numpy().round()
+            y_pred = y_pred * 85
+
+            for (fname, xx1, xx2, yy_pred) in zip(filename, x1, x2, y_pred):
+                fname = fname.split('.')[0] + f'_batch{i}.png'
+
+                cv2.imwrite(osp.join(infer_dir, fname), yy_pred)
+                
+            break
+        
         scheduler_steplr.step()
 
         # do something (save model, change lr, etc.)
@@ -185,8 +211,8 @@ def main(config_name):
         #     torch.save(model, f'./checkpoints/{run_name}.pth')
         #     print('Model saved!')
             
-        # early_stopping(test_logs['valid_mIoU'], model)
-        early_stopping(test_logs['valid_DiceLoss'], model)
+        early_stopping(1-test_logs['valid_mIoU'], model)
+        # early_stopping(test_logs['valid_DiceLoss'], model)
         
         if early_stopping.early_stop:
             print('\nEarly Stopping')
@@ -197,10 +223,7 @@ def main(config_name):
             )
             break
 
-    # Inference for test images
-    infer_dir = f'./infer_res/{run_name}'
-    if not os.path.exists(infer_dir):
-        os.makedirs(infer_dir)
+    
         
     # Save model as wandb artifact
     model_artifact = wandb.Artifact(name=run_name, type='model')

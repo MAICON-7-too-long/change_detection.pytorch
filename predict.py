@@ -30,7 +30,7 @@ def main(run_name):
     model = torch.load(f'./checkpoints/{run_name}.pth')
     model.eval()
     
-    valid_dataset = MAICON_Dataset('/etc/maicon/data/maicon/test',
+    valid_dataset = MAICON_Dataset('/workspace/data/01_data/test/',
                                         sub_dir_1='input1',
                                         sub_dir_2='input2',
                                         img_suffix='.png',
