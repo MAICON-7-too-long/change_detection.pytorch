@@ -68,6 +68,18 @@ def merge_mask(dir, mask_dir):
     res = Parallel(n_jobs=10)(delayed(merge)(file) for file in tqdm(os.listdir(dir)))
 
 @cli.command()
+@click.argument("mask_file")
+def print_pixel(mask_file):
+    mask = Image.open(mask_file)
+    w, h = mask.size
+    mask = np.array(mask)
+
+    for i in range(h):
+        for j in range(w):
+            print(f'{mask[i, j]}', end=" ")
+        print("\n")
+
+@cli.command()
 # @click.argument("mask_file")
 @click.argument("dir")
 def vis_mask(dir):
@@ -217,6 +229,7 @@ cli.add_command(split_mask)
 cli.add_command(vis_results)
 cli.add_command(input_size_check)
 cli.add_command(print_size)
+cli.add_command(print_pixel)
 
 if __name__ == "__main__":
     cli()
