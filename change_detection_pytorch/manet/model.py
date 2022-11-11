@@ -60,7 +60,7 @@ class MAnet(SegmentationModel):
         decoder_channels: List[int] = (256, 128, 64, 32, 16),
         decoder_pab_channels: int = 64,
         in_channels: int = 3,
-        classes: int = 1,
+        classes: int = 4,
         activation: Optional[Union[str, callable]] = None,
         aux_params: Optional[dict] = None,
         siam_encoder: bool = True,

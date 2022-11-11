@@ -55,7 +55,7 @@ class Linknet(SegmentationModel):
         encoder_weights: Optional[str] = "imagenet",
         decoder_use_batchnorm: bool = True,
         in_channels: int = 3,
-        classes: int = 1,
+        classes: int = 4,
         activation: Optional[Union[str, callable]] = None,
         aux_params: Optional[dict] = None,
         siam_encoder: bool = True,

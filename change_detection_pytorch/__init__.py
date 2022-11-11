@@ -25,7 +25,7 @@ def create_model(
     encoder_name: str = "resnet34",
     encoder_weights: Optional[str] = "imagenet",
     in_channels: int = 3,
-    classes: int = 1,
+    classes: int = 4,
     **kwargs,
 ) -> torch.nn.Module:
     """Models wrapper. Allows to create any model just with parametes

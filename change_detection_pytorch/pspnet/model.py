@@ -57,7 +57,7 @@ class PSPNet(SegmentationModel):
         psp_use_batchnorm: bool = True,
         psp_dropout: float = 0.2,
         in_channels: int = 3,
-        classes: int = 1,
+        classes: int = 4,
         activation: Optional[Union[str, callable]] = None,
         upsampling: int = 8,
         aux_params: Optional[dict] = None,

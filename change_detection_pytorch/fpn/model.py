@@ -55,7 +55,7 @@ class FPN(SegmentationModel):
         decoder_merge_policy: str = "add",
         decoder_dropout: float = 0.2,
         in_channels: int = 3,
-        classes: int = 1,
+        classes: int = 4,
         activation: Optional[str] = None,
         upsampling: int = 4,
         aux_params: Optional[dict] = None,

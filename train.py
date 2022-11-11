@@ -100,7 +100,8 @@ def main(config_name):
     # Split train dataset to train/test
     train_size = int(0.8 * len(train_dataset))
     test_size = len(train_dataset) - train_size
-    train_dataset, test_dataset = torch.utils.data.random_split(train_dataset, [train_size, test_size], generator=torch.Generator().manual_seed(42))
+    # train_dataset, test_dataset = torch.utils.data.random_split(train_dataset, [train_size, test_size], generator=torch.Generator().manual_seed(42))
+    train_dataset, test_dataset = torch.utils.data.random_split(train_dataset, [train_size, test_size])
     
     # DataLoader config
     train_loader = DataLoader(train_dataset, batch_size=config["dataset_config"]["train_batch_size"], shuffle=True, num_workers=4)
@@ -166,7 +167,7 @@ def main(config_name):
     early_stopping = cdp.utils.early_stopper.EarlyStopping(patience = 7, path = f'./checkpoints/{run_name}.pth', verbose = True)
 
     # train model for epochs
-    max_score = 0
+    # max_score = 0
     MAX_EPOCH = config["train_config"]["epochs"]
 
     for i in range(MAX_EPOCH):
@@ -201,16 +202,15 @@ def main(config_name):
     if not os.path.exists(infer_dir):
         os.makedirs(infer_dir)
         
+    # Save model as wandb artifact
     model_artifact = wandb.Artifact(name=run_name, type='model')
     model_artifact.add_file(local_path=f'./checkpoints/{run_name}.pth', name='model_weights')
     run.log_artifact(model_artifact)
 
+    # Generate mask image
     best_model = torch.load(f'./checkpoints/{run_name}.pth')
     valid_epoch.predict(best_model, valid_loader, save_dir=infer_dir)
     # valid_epoch.infer_vis(valid_loader, save=True, slide=False, save_dir=infer_dir)
-
-    # Save model as wandb artifact
-    
 
     # Send wandb alert
     wandb.alert(

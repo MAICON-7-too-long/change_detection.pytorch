@@ -13,7 +13,7 @@ from .meter import AverageValueMeter
 
 class Epoch:
 
-    def __init__(self, model, loss, metrics, stage_name, device='cpu', classes=1, wandb=None, verbose=True):
+    def __init__(self, model, loss, metrics, stage_name, device='cpu', classes=4, wandb=None, verbose=True):
         self.model = model
         self.loss = loss
         self.metrics = metrics
@@ -199,10 +199,10 @@ class Epoch:
 
                 # update metrics logs
                 for metric in self.metrics:
-                        # metric_value = metric_fn(y_pred, y).detach().cpu().numpy()
-                        metric_value = metric.get_iou(y_pred.argmax(1), y).detach().cpu().numpy()
-                        # metrics_meters[metric_fn.__name__].add(metric_value)
-                        metrics_meters[metric.name].add(metric_value)
+                    # metric_value = metric_fn(y_pred, y).detach().cpu().numpy()
+                    metric_value = metric.get_iou(y_pred.argmax(1), y).detach().cpu().numpy()
+                    # metrics_meters[metric_fn.__name__].add(metric_value)
+                    metrics_meters[metric.name].add(metric_value)
                 metrics_logs = {self.stage_name + "_" + k: v.mean for k, v in metrics_meters.items()}
                 logs.update(metrics_logs)
                 self.wandb.log(metrics_logs)
@@ -216,14 +216,14 @@ class Epoch:
 
 class TrainEpoch(Epoch):
 
-    def __init__(self, model, loss, metrics, optimizer, device='cpu', classes=1, wandb=None, verbose=True):
+    def __init__(self, model, loss, metrics, optimizer, device='cpu', classes=4, wandb=None, verbose=True):
         super().__init__(
             model=model,
             loss=loss,
             metrics=metrics,
             stage_name='train',
             device=device,
-            classes=1,
+            classes=classes,
             wandb=wandb,
             verbose=verbose,
         )
@@ -248,14 +248,14 @@ class TrainEpoch(Epoch):
 
 class ValidEpoch(Epoch):
 
-    def __init__(self, model, loss, metrics, device='cpu', classes=1, wandb=None, verbose=True):
+    def __init__(self, model, loss, metrics, device='cpu', classes=4, wandb=None, verbose=True):
         super().__init__(
             model=model,
             loss=loss,
             metrics=metrics,
             stage_name='valid',
             device=device,
-            classes=1,
+            classes=classes,
             wandb=wandb,
             verbose=verbose,
         )
