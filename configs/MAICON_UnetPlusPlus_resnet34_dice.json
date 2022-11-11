@@ -3,7 +3,8 @@
     "model_config" : {
         "in_channels" : 3,
         "classes" : 4,
-        "encoder_name" : "se_resnet152",
+        "activation" : "softmax2d",
+        "encoder_name" : "resnet34",
         "encoder_weights" : "imagenet",
         "siam_encoder" : true,
         "fusion_form" : "concat"
@@ -11,10 +12,10 @@
     "dataset_name" : "MAICON",
     "dataset_config" : {
         "train_batch_size" : 64,
-        "test_batch_size" : 16
+        "test_batch_size" : 4
     },
     "train_config" : {
-        "loss" : "CrossEntropyLoss",
+        "loss" : "DiceLoss",
         "optimizer" : "Adam",
         "lr" : 0.0001,
         "gamma" : 0.1,

@@ -17,7 +17,7 @@ config = {
     "fusion_form" : "concat",
     "lr" : 0.0001,
     "gamma" : 0.1,
-    "epochs" : 60,
+    "epochs" : 30,
 }
 
 wandb.login()

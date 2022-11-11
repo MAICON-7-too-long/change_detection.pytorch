@@ -17,33 +17,33 @@ class MAICON_Dataset(CustomDataset):
         """Set the default transformation."""
 
         default_transform = A.Compose([
-            # A.RandomCrop(height=512, width=512, p=0.3),
-            # A.PixelDropout(p=0.1),
-            # A.RandomGamma(p=0.2),
-            # A.OneOf([
-            #     A.Blur(blur_limit=3, p=1),
-            #     A.Defocus(p=0.5),
-            #     A.Spatter(p=1),
-            #     A.Emboss(p=0.7),
-            # ], p=0.1),
-            # A.OneOf([
-            #     A.CLAHE(p=0.1),
-            #     A.RandomBrightnessContrast(p=0.3),
-            #     A.HueSaturationValue(p=0.1),
-            #     A.RandomToneCurve(p=0.2),
-            # ], p=0.2),
-            # A.Downscale(scale_min=0.5, scale_max=0.8, p=0.2),
-            # A.OneOf([
-            #     A.Flip(p=0.1),
-            #     A.ShiftScaleRotate(p=0.05),
-            #     A.Perspective(p=0.1),
-            #     A.GridDistortion(p=0.3),
-            # ], p=0.1),
-            # A.OneOf([
-            #     A.GaussNoise(p=0.5),
-            #     A.ISONoise(p=0.5),
-            #     A.MultiplicativeNoise(p=0.5),
-            # ], p=0.3),
+            A.RandomCrop(height=512, width=512, p=0.3),
+            A.PixelDropout(p=0.1),
+            A.RandomGamma(p=0.2),
+            A.OneOf([
+                A.Blur(blur_limit=3, p=1),
+                A.Defocus(p=0.5),
+                A.Spatter(p=1),
+                A.Emboss(p=0.7),
+            ], p=0.1),
+            A.OneOf([
+                A.CLAHE(p=0.1),
+                A.RandomBrightnessContrast(p=0.3),
+                A.HueSaturationValue(p=0.1),
+                A.RandomToneCurve(p=0.2),
+            ], p=0.2),
+            A.Downscale(scale_min=0.5, scale_max=0.8, p=0.2),
+            A.OneOf([
+                A.Flip(p=0.1),
+                A.ShiftScaleRotate(p=0.05),
+                A.Perspective(p=0.1),
+                A.GridDistortion(p=0.3),
+            ], p=0.1),
+            A.OneOf([
+                A.GaussNoise(p=0.5),
+                A.ISONoise(p=0.5),
+                A.MultiplicativeNoise(p=0.5),
+            ], p=0.3),
             A.Resize(self.size, self.size),
             A.Normalize(),
             ToTensorV2()

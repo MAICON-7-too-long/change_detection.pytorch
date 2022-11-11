@@ -167,7 +167,7 @@ def main(config_name):
     )
     
     # Early stopper
-    early_stopping = cdp.utils.early_stopper.EarlyStopping(patience = 7, path = f'./checkpoints/{run_name}.pth', verbose = True)
+    early_stopping = cdp.utils.early_stopper.EarlyStopping(patience = 5, path = f'./checkpoints/{run_name}.pth', verbose = True)
     
     # Inference for test images
     infer_dir = f'./infer_res/{run_name}'
