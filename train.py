@@ -184,7 +184,8 @@ def main(config_name):
         #     torch.save(model, f'./checkpoints/{run_name}.pth')
         #     print('Model saved!')
             
-        early_stopping(test_logs['valid_mIoU'], model)
+        # early_stopping(test_logs['valid_mIoU'], model)
+        early_stopping(test_logs['valid_DiceLoss'], model)
         
         if early_stopping.early_stop:
             print('\nEarly Stopping')
@@ -199,15 +200,17 @@ def main(config_name):
     infer_dir = f'./infer_res/{run_name}'
     if not os.path.exists(infer_dir):
         os.makedirs(infer_dir)
+        
+    model_artifact = wandb.Artifact(name=run_name, type='model')
+    model_artifact.add_file(local_path=f'./checkpoints/{run_name}.pth', name='model_weights')
+    run.log_artifact(model_artifact)
 
     best_model = torch.load(f'./checkpoints/{run_name}.pth')
     valid_epoch.predict(best_model, valid_loader, save_dir=infer_dir)
     # valid_epoch.infer_vis(valid_loader, save=True, slide=False, save_dir=infer_dir)
 
     # Save model as wandb artifact
-    model_artifact = wandb.Artifact(name=run_name, type='model')
-    model_artifact.add_file(local_path=f'./checkpoints/{run_name}.pth', name='model_weights')
-    run.log_artifact(model_artifact)
+    
 
     # Send wandb alert
     wandb.alert(

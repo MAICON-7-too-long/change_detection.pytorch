@@ -68,19 +68,21 @@ def merge_mask(dir, mask_dir):
     res = Parallel(n_jobs=10)(delayed(merge)(file) for file in tqdm(os.listdir(dir)))
 
 @cli.command()
-@click.argument("mask_file")
-def vis_mask(mask_file):
+# @click.argument("mask_file")
+@click.argument("dir")
+def vis_mask(dir):
     if not os.path.exists(os.path.join("./vis")):
         os.makedirs(os.path.join("./vis"))
 
-    if os.path.isfile(mask_file):
-        mask = Image.open(mask_file)
-        mask = np.array(mask)
-        mask = mask * 85
-        mask_img = Image.fromarray(mask)
+    for file in os.listdir(dir):
+        if os.path.isfile(os.path.join(dir, file)):
+            mask = Image.open(os.path.join(dir, file))
+            mask = np.array(mask)
+            mask = mask * 85
+            mask_img = Image.fromarray(mask)
 
-        mask_img.save(os.path.join("./vis", mask_file.split(".")[0]+"_vis.png"))
-        print(os.path.join("./vis", mask_file.split(".")[0]+"_vis.png"))
+            mask_img.save(os.path.join("./vis", file.split(".")[0]+"_vis.png"))
+            print(os.path.join("./vis", file.split(".")[0]+"_vis.png"))
 
 @cli.command()
 @click.argument("dir")

@@ -31,19 +31,19 @@ class MAICON_Dataset(CustomDataset):
                 A.RandomBrightnessContrast(p=0.3),
                 A.HueSaturationValue(p=0.1),
                 A.RandomToneCurve(p=0.2),
-            ], p=0.3),
+            ], p=0.2),
             A.Downscale(scale_min=0.5, scale_max=0.8, p=0.2),
             A.OneOf([
                 A.Flip(p=0.1),
                 A.ShiftScaleRotate(p=0.05),
                 A.Perspective(p=0.1),
                 A.GridDistortion(p=0.3),
-            ], p=0.2),
+            ], p=0.1),
             A.OneOf([
                 A.GaussNoise(p=0.5),
                 A.ISONoise(p=0.5),
                 A.MultiplicativeNoise(p=0.5),
-            ], p=0.4),
+            ], p=0.3),
             A.Resize(self.size, self.size),
             A.Normalize(),
             ToTensorV2()
