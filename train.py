@@ -3,6 +3,9 @@ import os
 import json
 import click
 
+import numpy as np
+import random
+
 import torch
 from torch.utils.data import DataLoader, Dataset
 
@@ -27,6 +30,13 @@ def main(config_name):
     # load config
     with open(config_name) as config_file:
         config = json.load(config_file)
+
+    torch.cuda.manual_seed(777)
+    torch.manual_seed(777)
+    np.random.seed(777)
+    random.seed(777)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
     # wandb init
     run_name = f'{config["dataset_name"]}_{config["model_name"]}_{datetime.now().strftime("%m_%d-%H_%M_%S")}'
