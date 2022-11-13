@@ -189,6 +189,61 @@ def vis_results(x_dir, y_dir):
     wandb.finish()
 
 @cli.command()
+@click.argument("x_dir")
+@click.argument("parent_y_dir")
+def vis_ensembles(x_dir, parent_y_dir):
+    submission_name = "ensambles"
+
+    wandb.login()
+    wandb.init(
+        project="maicon-change-detection-submissions",
+        name=submission_name,
+        config={
+            "name" : submission_name
+        }
+    )
+
+    dirs = os.listdir(parent_y_dir)
+    dirs.insert(0, "Name")
+
+    infer_table = wandb.Table(columns=dirs)
+
+    for file in tqdm(os.listdir(x_dir)):
+        img_path = os.path.join(x_dir, file)
+
+        img = Image.open(img_path)
+        img = np.array(img)
+
+        mask_imgs = [file]
+
+        for y_dir in os.listdir(parent_y_dir):
+            mask_path = os.path.join(parent_y_dir, y_dir, file)
+
+            mask = Image.open(mask_path)
+            mask = np.array(mask)
+            # mask = torch.tensor(mask)
+            
+            wandb_img = wandb.Image(img, masks = {
+                "prediction" : {
+                    "mask_data" : mask,
+                    "class_labels" : { 
+                        1 : "New",
+                        2 : "Destory",
+                        3 : "Change"
+                    } 
+                },
+            })
+
+            mask_imgs.append(wandb_img)
+
+        infer_table.add_data(*mask_imgs)
+        
+    wandb.log({"Table" : infer_table})
+
+    wandb.finish()
+
+
+@cli.command()
 @click.argument("dir")
 def input_size_check(dir):
     def check(file):

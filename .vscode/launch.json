@@ -11,7 +11,8 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args" : ["./configs/MAICON_Unet_resnet34.json"]
+            // "args" : ["./configs/MAICON_Unet_resnet34.json"]
+            "args" : ["MAICON_STANet_11_12-18_58_51"]
         }
     ]
 }

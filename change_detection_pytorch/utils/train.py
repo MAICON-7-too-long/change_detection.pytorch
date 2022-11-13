@@ -71,17 +71,17 @@ class Epoch:
                     img1 = self.wandb.Image(xx1)
                     img2 = self.wandb.Image(xx2, masks = {
                         "prediction" : {
-                            "mask_data" : yy_pred,
-                            "class_labels" : { i+1 : str(i+1) for i in range(self.classes)} 
+                            "mask_data" : y_pred,
+                            "class_labels" : { i+1 : str(i+1) for i in range(self.classes-1)} 
                         },
                     })
                     
                     self.infer_table.add_data(fname, img1, img2)
                     
                     if fname in ["1033.png", "1621.png", "1787.png", "1315.png", "2446.png", "1820.png"]:
-                        yy_pred = cv2.resize(yy_pred, (750, 750), interpolation=cv2.INTER_NEAREST)
+                        yy_pred = cv2.resize(y_pred, (750, 750), interpolation=cv2.INTER_NEAREST)
                     else:
-                        yy_pred = cv2.resize(yy_pred, (754, 754), interpolation=cv2.INTER_NEAREST)
+                        yy_pred = cv2.resize(y_pred, (754, 754), interpolation=cv2.INTER_NEAREST)
                     
                     cv2.imwrite(osp.join(save_dir, fname), yy_pred)
 
@@ -150,7 +150,7 @@ class Epoch:
                         img2 = self.wandb.Image(xx2, masks = {
                             "prediction" : {
                                 "mask_data" : yy_pred,
-                                "class_labels" : { i+1 : str(i+1) for i in range(self.classes)} 
+                                "class_labels" : { i+1 : str(i+1) for i in range(self.classes-1)} 
                             },
                         })
                         
@@ -174,7 +174,8 @@ class Epoch:
             
             self.wandb.log({"Table" : self.infer_table})
 
-    def run(self, dataloader):
+    def run(self, dataloader, epoch, infer_dir):
+        import cv2
 
         self.on_epoch_start()
 
@@ -184,11 +185,19 @@ class Epoch:
         scaler = GradScaler()
         with tqdm(dataloader, desc=self.stage_name, file=sys.stdout, disable=not (self.verbose)) as iterator:
             for (x1, x2, y, filename) in iterator:
-
                 x1, x2, y = self.check_tensor(x1, False), self.check_tensor(x2, False), \
                             self.check_tensor(y, True)
                 x1, x2, y = x1.to(self.device), x2.to(self.device), y.to(self.device)
                 loss, y_pred = self.batch_update(x1, x2, y, scaler)
+
+                # if len(logs) == 0:
+                #     y_pred1 = torch.argmax(y_pred, dim=1).squeeze().cpu().numpy().round()
+                #     y_pred1 = y_pred1 * 85
+
+                #     for (fname, xx1, xx2, yy_pred) in zip(filename, x1, x2, y_pred1):
+                #         fname = fname.split('.')[0] + f'_batch{epoch}.png'
+
+                #         cv2.imwrite(osp.join(infer_dir, fname), yy_pred)
 
                 # update loss logs
                 loss_value = loss.detach().cpu().numpy()

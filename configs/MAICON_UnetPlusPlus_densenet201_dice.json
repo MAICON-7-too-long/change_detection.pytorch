@@ -3,23 +3,24 @@
     "model_config" : {
         "in_channels" : 3,
         "classes" : 4,
-        "activation" : "softmax2d",
-        "encoder_name" : "resnet34",
-        "encoder_weights" : "imagenet",
+        "encoder_name" : "timm-efficientnet-b0",
+        "encoder_weights" : "noisy-student",
+        "decoder_attention_type" : "scse",
         "siam_encoder" : true,
         "fusion_form" : "concat"
     },
     "dataset_name" : "MAICON",
     "dataset_config" : {
-        "train_batch_size" : 32,
+        "train_batch_size" : 16,
         "test_batch_size" : 4,
-        "image_size" : 512
+        "image_size" : 256
     },
     "train_config" : {
         "loss" : "DiceLoss",
-        "optimizer" : "Adam",
+        "optimizer" : "AdamW",
         "lr" : 0.0001,
         "gamma" : 0.1,
-        "epochs" : 30
+        "epochs" : 60,
+        "weight_decay" : 5.0e-02
     }
 }

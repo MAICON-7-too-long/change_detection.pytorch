@@ -68,17 +68,19 @@ def main(config_name):
 
     # Dataset configure
     if config["dataset_name"] == "MAICON":
-        train_dataset = MAICON_Dataset('/workspace/data/01_data/train',
+        train_dataset = MAICON_Dataset('/etc/maicon/data/maicon/train',
                                     sub_dir_1='input1',
                                     sub_dir_2='input2',
                                     img_suffix='.png',
-                                    ann_dir='/workspace/data/01_data/train/mask',
+                                    ann_dir='/etc/maicon/data/maicon/train/mask',
+                                    size=config["dataset_config"]["image_size"],
                                     debug=False)
 
-        valid_dataset = MAICON_Dataset('/workspace/data/01_data/test',
+        valid_dataset = MAICON_Dataset('/etc/maicon/data/maicon/test',
                                         sub_dir_1='input1',
                                         sub_dir_2='input2',
                                         img_suffix='.png',
+                                        # size=768,
                                         debug=False,
                                         test_mode=True)
                                         
@@ -101,7 +103,7 @@ def main(config_name):
         raise Exception("Wrong dataset type")
 
     # Split train dataset to train/test
-    train_size = int(0.8 * len(train_dataset))
+    train_size = int(0.9 * len(train_dataset))
     test_size = len(train_dataset) - train_size
     # train_dataset, test_dataset = torch.utils.data.random_split(train_dataset, [train_size, test_size], generator=torch.Generator().manual_seed(42))
     train_dataset, test_dataset = torch.utils.data.random_split(train_dataset, [train_size, test_size])
@@ -113,7 +115,7 @@ def main(config_name):
 
     # Loss config
     if config["train_config"]["loss"] == "CrossEntropyLoss":
-        loss = cdp.utils.losses.CrossEntropyLoss()
+        loss = cdp.utils.losses.CrossEntropyLoss(weight = torch.tensor([0.2, 1.0, 1.0, 1.0]))
     elif config["train_config"]["loss"] == "DiceLoss":
         loss = cdp.losses.DiceLoss(mode=cdp.losses.MULTICLASS_MODE, from_logits = True)
     else:
@@ -135,13 +137,24 @@ def main(config_name):
         ])
     elif config["train_config"]["optimizer"] == "NAdam":
         optimizer = torch.optim.NAdam([
-            dict(params=model.parameters(), lr=config["lr"]),
+            dict(params=model.parameters(), lr=config["train_config"]["lr"]),
+        ])
+    elif config["train_config"]["optimizer"] == "AdamW":
+        optimizer = torch.optim.AdamW([
+            dict(params=model.parameters(), lr=config["train_config"]["lr"], weight_decay = config["train_config"]["weight_decay"]),
         ])
     else:
         raise Exception("Wrong optimizer")
 
     # Default scheduler
-    scheduler_steplr = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[50, ], gamma=config["train_config"]["gamma"])
+    # scheduler:
+    # name: CosineAnnealingLR
+    # args:
+    #     T_max: 100
+    #     eta_min: 0
+
+    scheduler_steplr = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max = 100, eta_min = 0)
+    # scheduler_steplr = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[50, ], gamma=config["train_config"]["gamma"])
 
     # create epoch runners
     # it is a simple loop of iterating over dataloader`s samples
@@ -167,7 +180,7 @@ def main(config_name):
     )
     
     # Early stopper
-    early_stopping = cdp.utils.early_stopper.EarlyStopping(patience = 5, path = f'./checkpoints/{run_name}.pth', verbose = True)
+    early_stopping = cdp.utils.early_stopper.EarlyStopping(patience = 50, path = f'./checkpoints/{run_name}.pth', verbose = True)
     
     # Inference for test images
     infer_dir = f'./infer_res/{run_name}'
@@ -180,37 +193,30 @@ def main(config_name):
 
     for i in range(MAX_EPOCH):
         print('\nEpoch: {}'.format(i))
-        train_logs = train_epoch.run(train_loader)
+        train_logs = train_epoch.run(train_loader, i, infer_dir)
         # ! we don't have ground truth in MAICON
-        test_logs = valid_epoch.run(test_loader)
+        test_logs = valid_epoch.run(test_loader, i, infer_dir)
         # valid_logs = valid_epoch.run(valid_loader)
         
-        # Debug for 
-        for (x1, x2, filename) in valid_loader:
-            x1, x2 = valid_epoch.check_tensor(x1, False), valid_epoch.check_tensor(x2, False)
-            x1, x2 = x1.float(), x2.float()
-            x1, x2 = x1.to(DEVICE), x2.to(DEVICE)
-            y_pred = model.forward(x1, x2)
+        # Generate mask for debug
+        # for (x1, x2, filename) in valid_loader:
+        #     x1, x2 = valid_epoch.check_tensor(x1, False), valid_epoch.check_tensor(x2, False)
+        #     x1, x2 = x1.float(), x2.float()
+        #     x1, x2 = x1.to(DEVICE), x2.to(DEVICE)
+        #     y_pred = model.forward(x1, x2)
             
-            y_pred = torch.argmax(y_pred, dim=1).squeeze().cpu().numpy().round()
-            y_pred = y_pred * 85
+        #     y_pred = torch.argmax(y_pred, dim=1).squeeze().cpu().numpy().round()
+        #     y_pred = y_pred * 85
 
-            for (fname, xx1, xx2, yy_pred) in zip(filename, x1, x2, y_pred):
-                fname = fname.split('.')[0] + f'_batch{i}.png'
+        #     for (fname, xx1, xx2, yy_pred) in zip(filename, x1, x2, y_pred):
+        #         fname = fname.split('.')[0] + f'_batch{i}.png'
 
-                cv2.imwrite(osp.join(infer_dir, fname), yy_pred)
+        #         cv2.imwrite(osp.join(infer_dir, fname), yy_pred)
                 
-            break
+        #     break
         
         scheduler_steplr.step()
 
-        # do something (save model, change lr, etc.)
-        # if max_score < test_logs['valid_mIoU']:
-        #     max_score = test_logs['valid_mIoU']
-        #     print('max_score', max_score)
-        #     torch.save(model, f'./checkpoints/{run_name}.pth')
-        #     print('Model saved!')
-            
         early_stopping(1-test_logs['valid_mIoU'], model)
         # early_stopping(test_logs['valid_DiceLoss'], model)
         
@@ -223,8 +229,8 @@ def main(config_name):
             )
             break
 
-    
-        
+        torch.save(model, f'./checkpoints/{run_name}_last.pth')
+
     # Save model as wandb artifact
     model_artifact = wandb.Artifact(name=run_name, type='model')
     model_artifact.add_file(local_path=f'./checkpoints/{run_name}.pth', name='model_weights')

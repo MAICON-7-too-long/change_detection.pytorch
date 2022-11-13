@@ -30,14 +30,14 @@ def main(run_name):
     model = torch.load(f'./checkpoints/{run_name}.pth')
     model.eval()
     
-    valid_dataset = MAICON_Dataset('/workspace/data/01_data/test/',
+    valid_dataset = MAICON_Dataset('/etc/maicon/data/maicon/test/',
                                         sub_dir_1='input1',
                                         sub_dir_2='input2',
                                         img_suffix='.png',
                                         debug=False,
                                         test_mode=True)
     
-    valid_loader = DataLoader(valid_dataset, batch_size=4, shuffle=False, num_workers=4)
+    valid_loader = DataLoader(valid_dataset, batch_size=1, shuffle=False, num_workers=4)
 
     valid_epoch = cdp.utils.train.ValidEpoch(
         model,

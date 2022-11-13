@@ -1,23 +1,23 @@
 {
-    "model_name" : "STANet",
+    "model_name" : "DeepLabV3Plus",
     "model_config" : {
         "in_channels" : 3,
         "classes" : 4,
-        "encoder_name" : "timm-efficientnet-b0",
+        "encoder_name" : "timm-efficientnet-b4",
         "encoder_weights" : "noisy-student",
         "siam_encoder" : true,
         "fusion_form" : "concat"
     },
     "dataset_name" : "MAICON",
     "dataset_config" : {
-        "train_batch_size" : 8,
-        "test_batch_size" : 4,
-        "image_size" : 256
+        "train_batch_size" : 16,
+        "test_batch_size" : 16,
+        "image_size" : 384
     },
     "train_config" : {
         "loss" : "DiceLoss",
         "optimizer" : "AdamW",
-        "lr" : 0.0001,
+        "lr" : 0.001,
         "gamma" : 0.1,
         "epochs" : 60,
         "weight_decay" : 5.0e-02
