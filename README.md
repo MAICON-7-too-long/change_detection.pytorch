@@ -95,7 +95,7 @@
 ### 데이터 전처리
   - data_processing.py
     - split_image 함수 : 데이터셋 항공 이미지를 전/후 이미지로 분리
-    - merge_mask 함수 : 모델 학습을 위해 데이터셋 mask 이미지를 하나의 이미지로 병합. 만약, 2번 label와 1,3번 label가 겹칠 경우 1,3번 label로 우선되게 설정
+    - merge_mask 함수 : 모델 학습을 위해 데이터셋 mask 이미지를 하나의 이미지로 병합. 만약, 2번 label과 1,3번 label이 겹칠 경우 1,3번 label이 우선되게 설정
     - vis_mask 함수 : mask 이미지를 시각적으로 보기 좋게 변환
     - split_mask 함수 : 생성한 mask 이미지를 원래 mask 형식으로 분리
     - vis_result 함수 : 생성한 mask 이미지를 wandb에 업로드하여 항공 이미지와 겹쳐서 보이도록 변환
