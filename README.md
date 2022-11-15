@@ -65,6 +65,13 @@
     ```bash
     #!/bin/bash
     
+    # 가상환경 활성화
+    conda activate maicon
+    
+    # 코드가 있는 디렉토리로 이동
+    cd /workspace/change_detection.pytorch
+    
+    # train 및 test 데이터셋 전처리
     python /workspace/change_detection.pytorch/data_processing.py split-image /workspace/data/01_data/train/x
     python /workspace/change_detection.pytorch/data_processing.py split-image /workspace/data/01_data/test/x
     python /workspace/change_detection.pytorch/data_processing.py merge-mask /workspace/data/01_data/train/y mask
