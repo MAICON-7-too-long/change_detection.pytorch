@@ -75,18 +75,18 @@ def main(config_name):
         )
     else:
         raise Exception("Wrong model type")
-
+    
     # Dataset configure
     if config["dataset_name"] == "MAICON":
-        train_dataset = MAICON_Dataset('/etc/maicon/data/maicon/train',
+        train_dataset = MAICON_Dataset('/workspace/data/01_data/train/',
                                     sub_dir_1='input1',
                                     sub_dir_2='input2',
                                     img_suffix='.png',
-                                    ann_dir='/etc/maicon/data/maicon/train/mask',
+                                    ann_dir='/workspace/data/01_data/train/mask',
                                     size=config["dataset_config"]["image_size"],
                                     debug=False)
 
-        valid_dataset = MAICON_Dataset('/etc/maicon/data/maicon/test',
+        valid_dataset = MAICON_Dataset('/workspace/data/01_data/test',
                                         sub_dir_1='input1',
                                         sub_dir_2='input2',
                                         img_suffix='.png',
@@ -125,7 +125,7 @@ def main(config_name):
 
     # Loss config
     if config["train_config"]["loss"] == "CrossEntropyLoss":
-        loss = cdp.utils.losses.CrossEntropyLoss(weight = torch.tensor([0.2, 1.0, 1.0, 1.0]))
+        loss = cdp.utils.losses.CrossEntropyLoss()
     elif config["train_config"]["loss"] == "DiceLoss":
         loss = cdp.losses.DiceLoss(mode=cdp.losses.MULTICLASS_MODE, from_logits = True)
     else:

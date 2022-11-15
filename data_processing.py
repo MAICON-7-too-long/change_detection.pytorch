@@ -26,14 +26,14 @@ def split_image(dir):
     if not os.path.exists(os.path.join(dir, "../input2")):
         os.makedirs(os.path.join(dir, "../input2"))
 
-    for file in os.listdir(dir):
+    for file in tqdm(os.listdir(dir)):
         img_file = os.path.join(dir, file)
         if os.path.isfile(img_file):
             img = Image.open(img_file)
-            w, h = image.size
-            image = np.array(image)
-            img1 = image[:,:h,]
-            img2 = image[:,h:,]
+            w, h = img.size
+            img = np.array(img)
+            img1 = img[:,:h,]
+            img2 = img[:,h:,]
             
             img1 = Image.fromarray(img1)
             img2 = Image.fromarray(img2)

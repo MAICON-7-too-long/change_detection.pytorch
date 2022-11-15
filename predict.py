@@ -13,11 +13,21 @@ import change_detection_pytorch as cdp
 
 import wandb
 
+import numpy as np
+import random
+
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 @click.command()
 @click.argument("run_name")
 def main(run_name):
+    torch.cuda.manual_seed(777)
+    torch.manual_seed(777)
+    np.random.seed(777)
+    random.seed(777)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
     wandb.login()
     wandb.init(
         project="maicon-change-detection-submissions",
@@ -30,7 +40,7 @@ def main(run_name):
     model = torch.load(f'./checkpoints/{run_name}.pth')
     model.eval()
     
-    valid_dataset = MAICON_Dataset('/etc/maicon/data/maicon/test/',
+    valid_dataset = MAICON_Dataset('/workspace/data/01_data/test/',
                                         sub_dir_1='input1',
                                         sub_dir_2='input2',
                                         img_suffix='.png',
