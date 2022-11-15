@@ -12,6 +12,9 @@ from change_detection_pytorch.datasets import MAICON_Dataset
 import change_detection_pytorch as cdp
 
 import wandb
+import numpy as np
+import random
+
 
 import numpy as np
 import random

@@ -10,7 +10,11 @@
     },
     "dataset_name" : "MAICON",
     "dataset_config" : {
+<<<<<<< HEAD
         "train_batch_size" : 32,
+=======
+        "train_batch_size" : 16,
+>>>>>>> 5177f2275abc9c626bf3ddd382f7e1f3267d6b24
         "test_batch_size" : 16,
         "image_size" : 256,
         "augmentation" : false
@@ -20,7 +24,11 @@
         "optimizer" : "AdamW",
         "lr" : 0.0005,
         "gamma" : 0.1,
+<<<<<<< HEAD
         "epochs" : 30,
+=======
+        "epochs" : 20,
+>>>>>>> 5177f2275abc9c626bf3ddd382f7e1f3267d6b24
         "weight_decay" : 5.0e-02,
         "weights" : 1
     }

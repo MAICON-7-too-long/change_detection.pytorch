@@ -17,7 +17,7 @@ class MAICON_Dataset(CustomDataset):
         """Set the default transformation."""
 
         default_transform = A.Compose([
-            A.RandomCrop(height=512, width=512, p=0.2),
+            # A.RandomCrop(height=512, width=512, p=0.2),
             # A.PixelDropout(p=0.01),
             # A.RandomGamma(p=0.02),
             # A.OneOf([
@@ -32,18 +32,18 @@ class MAICON_Dataset(CustomDataset):
             #     A.HueSaturationValue(p=0.1),
             #     A.RandomToneCurve(p=0.2),
             # ], p=0.02),
-            A.Downscale(scale_min=0.8, scale_max=0.99, p=0.2),
-            A.OneOf([
-                A.Flip(p=0.1),
-                # A.ShiftScaleRotate(p=0.05),
-                A.Perspective(p=0.1),
-                # A.GridDistortion(p=0.3),
-            ], p=0.1),
-            A.OneOf([
-                A.GaussNoise(p=0.5),
-                A.ISONoise(p=0.5),
-                A.MultiplicativeNoise(p=0.5),
-            ], p=0.1),
+            # A.Downscale(scale_min=0.8, scale_max=0.99, p=0.2),
+            # A.OneOf([
+            #     A.Flip(p=0.1),
+            #     # A.ShiftScaleRotate(p=0.05),
+            #     A.Perspective(p=0.1),
+            #     # A.GridDistortion(p=0.3),
+            # ], p=0.1),
+            # A.OneOf([
+            #     A.GaussNoise(p=0.5),
+            #     A.ISONoise(p=0.5),
+            #     A.MultiplicativeNoise(p=0.5),
+            # ], p=0.1),
             A.Resize(self.size, self.size),
             A.Normalize(),
             ToTensorV2()
