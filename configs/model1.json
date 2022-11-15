@@ -20,7 +20,7 @@
     },
 
     "train_config" : {
-        "epochs" : 80,
+        "epochs" : 15,
 
         "split_ratio" : 0.9,
 
@@ -29,7 +29,7 @@
 
         "loss_name" : "CrossEntropyLoss",
         "loss_config" : {
-            "weights" : [0.2, 1, 1, 1]
+            "weight" : [0.2, 1, 1, 1]
         },
 
         "optimizer_name" : "AdamW",

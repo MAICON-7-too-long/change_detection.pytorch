@@ -1,5 +1,5 @@
 {
-    "id" : 0,
+    "id" : 1,
 
     "seed" : 777,
 
@@ -7,7 +7,7 @@
     "model_config" : {
         "in_channels" : 3,
         "classes" : 4,
-        "encoder_name" : "timm-efficientnet-b5",
+        "encoder_name" : "timm-efficientnet-b7",
         "encoder_weights" : "noisy-student",
         "siam_encoder" : true,
         "fusion_form" : "concat"
@@ -16,20 +16,20 @@
     "dataset_name" : "MAICON",
     "dataset_config" : {
         "image_size" : 256,
-        "augmentation" : false
+        "augmentation" : true
     },
 
     "train_config" : {
-        "epochs" : 30,
+        "epochs" : 11,
 
         "split_ratio" : 0.9,
 
-        "train_batch_size" : 32,
-        "test_batch_size" : 16,
+        "train_batch_size" : 16,
+        "test_batch_size" : 8,
 
         "loss_name" : "CrossEntropyLoss",
         "loss_config" : {
-            "weights" : [0.2, 1, 1, 1]
+            "weight" : [0.2, 1, 1, 1]
         },
 
         "optimizer_name" : "AdamW",
@@ -40,7 +40,7 @@
         },
 
         "earlystopping_target": "valid_mIoU",
-        "earlystopping_patience" : 30,
+        "earlystopping_patience" : 50,
 
         "scheduler_name" : "CosineAnnealingLR",
         "scheduler_config" : {

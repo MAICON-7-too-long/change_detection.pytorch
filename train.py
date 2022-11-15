@@ -42,8 +42,8 @@ def main(config_name, output_file, load_model):
     torch.backends.cudnn.benchmark = False
 
     # wandb init
-    if config["id"] > 0:
-        run_name = f'{config["dataset_name"]}_{config["model_name"]}_{config["id"]}'
+    if output_file:
+        run_name = output_file
     else:
         run_name = f'{config["dataset_name"]}_{config["model_name"]}_{datetime.now().strftime("%m_%d-%H_%M_%S")}'
 
@@ -116,7 +116,12 @@ def main(config_name, output_file, load_model):
 
     # Loss config
     if config["train_config"]["loss_name"] == "CrossEntropyLoss":
-        loss = cdp.utils.losses.CrossEntropyLoss(**config["train_config"]["loss_config"])
+        loss_config = config["train_config"]["loss_config"]
+        
+        if "weight" in loss_config:
+            loss_config["weight"] = torch.tensor(loss_config["weight"])
+            
+        loss = cdp.utils.losses.CrossEntropyLoss(**loss_config)
     elif config["train_config"]["loss_name"] == "DiceLoss":
         loss = cdp.losses.DiceLoss(mode=cdp.losses.MULTICLASS_MODE, from_logits = True, **config["train_config"]["loss_config"])
     else:
@@ -148,9 +153,9 @@ def main(config_name, output_file, load_model):
 
     # Scheduler config
     if config["train_config"]["scheduler_name"] == "CosineAnnealingLR":
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, config["train_config"]["scheduler_config"])
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, **config["train_config"]["scheduler_config"])
     elif config["train_config"]["scheduler_name"] == "MultiStepLR":
-        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, config["train_config"]["scheduler_config"])
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, **config["train_config"]["scheduler_config"])
     else:
         raise Exception("Wrong scheduler type")
     
@@ -236,12 +241,11 @@ def main(config_name, output_file, load_model):
 
         torch.save(model, f'{os.environ.get("CDP_DIR", "/workspace/Final_Submission")}/checkpoints/{run_name}_epoch_{i}.pth')
 
-    if output_file:
-        torch.save(model, f'{os.environ.get("CDP_DIR", "/workspace/Final_Submission")}/checkpoints/{output_file}_last.pth')
+    torch.save(model, f'{os.environ.get("CDP_DIR", "/workspace/Final_Submission")}/checkpoints/{run_name}_last.pth')
 
     # Save model as wandb artifact
     model_artifact = wandb.Artifact(name=run_name, type='model')
-    model_artifact.add_file(local_path=f'{os.environ.get("CDP_DIR", "/workspace/Final_Submission")}/checkpoints/{run_name}.pth', name='model_weights')
+    model_artifact.add_file(local_path=f'{os.environ.get("CDP_DIR", "/workspace/Final_Submission")}/checkpoints/{run_name}_best.pth', name='model_weights')
     run.log_artifact(model_artifact)
 
     # Generate mask image

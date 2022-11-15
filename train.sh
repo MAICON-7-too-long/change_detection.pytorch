@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 가상환경 활성화
-conda activate maicon
+# conda activate maicon
 
 # 코드가 있는 디렉토리로 이동
 cd $CDP_DIR
