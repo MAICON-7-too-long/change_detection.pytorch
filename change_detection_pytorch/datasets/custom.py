@@ -58,12 +58,14 @@ class CustomDataset(Dataset):
                  img_suffix='.jpg',
                  seg_map_suffix='.png',
                  transform=None,
+                 augmentation=False,
                  split=None,
                  data_root=None,
                  test_mode=False,
                  size=256,
                  debug=False):
         self.transform = transform
+        self.augmentation = augmentation
         self.img_dir = img_dir
         self.ann_dir = ann_dir
         self.img_suffix = img_suffix

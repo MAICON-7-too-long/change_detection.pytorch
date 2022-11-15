@@ -43,7 +43,7 @@ def main(run_name):
     model = torch.load(f'./checkpoints/{run_name}.pth')
     model.eval()
     
-    valid_dataset = MAICON_Dataset('/workspace/data/01_data/test/',
+    valid_dataset = MAICON_Dataset(f'{os.environ.get("DATA_DIR", "/workspace/data/01_data")}/test',
                                         sub_dir_1='input1',
                                         sub_dir_2='input2',
                                         img_suffix='.png',
@@ -56,7 +56,6 @@ def main(run_name):
         model,
         loss = cdp.losses.DiceLoss(mode=cdp.losses.MULTICLASS_MODE, from_logits = True),
         metrics = [
-            # cdp.utils.metrics.IoU(activation='softmax2d'),
             cdp.utils.my_metrics.Iou(class_num=0),
             cdp.utils.my_metrics.Iou(class_num=1),
             cdp.utils.my_metrics.Iou(class_num=2),
@@ -74,13 +73,6 @@ def main(run_name):
 
     valid_epoch.predict(model, valid_loader, save_dir=infer_dir)
     
-    # for (x1, x2, filename) in tqdm(valid_loader):
-    #     for (fname, xx1, xx2) in zip(filename, x1, x2):
-    #         y_pred = model.predict(xx1, xx2)
-    #         y_pred = y_pred.argmax(1).squeeze().cpu().numpy().round()
-            
-    #         cv2.imwrite(os.path.join("infer_res", fname), y_pred)
-
     wandb.finish()
 
 if __name__ == "__main__":

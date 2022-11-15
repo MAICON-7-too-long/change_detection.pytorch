@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python /workspace/change_detection.pytorch/data_processing.py split-image /workspace/data/01_data/train/x
-python /workspace/change_detection.pytorch/data_processing.py split-image /workspace/data/01_data/test/x
-python /workspace/change_detection.pytorch/data_processing.py merge-mask /workspace/data/01_data/train/y mask
-python /workspace/change_detection.pytorch/data_processing.py merge-mask /workspace/data/01_data/test/y mask
+python ${CDP_DIR}/data_processing.py split-image ${DATA_DIR}/train/x
+python ${CDP_DIR}/data_processing.py split-image ${DATA_DIR}/test/x
+python ${CDP_DIR}/data_processing.py merge-mask ${DATA_DIR}/train/y mask
+python ${CDP_DIR}/data_processing.py merge-mask ${DATA_DIR}/test/y mask

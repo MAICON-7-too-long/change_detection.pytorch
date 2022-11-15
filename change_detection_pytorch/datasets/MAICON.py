@@ -10,44 +10,52 @@ from .transforms.albu import ChunkImage, ToTensorTest
 class MAICON_Dataset(CustomDataset):
     """MAICON_Dataset"""
 
-    def __init__(self, img_dir, sub_dir_1='input1', sub_dir_2='input2', ann_dir=None, img_suffix='.png', seg_map_suffix='.png', transform=None, split=None, data_root=None, test_mode=False, size=256, debug=False):
-        super().__init__(img_dir, sub_dir_1, sub_dir_2, ann_dir, img_suffix, seg_map_suffix, transform, split, data_root, test_mode, size, debug)
+    def __init__(self, img_dir, sub_dir_1='input1', sub_dir_2='input2', ann_dir=None, img_suffix='.png', seg_map_suffix='.png', transform=None, augmentation=False, split=None, data_root=None, test_mode=False, size=256, debug=False):
+        super().__init__(img_dir, sub_dir_1, sub_dir_2, ann_dir, img_suffix, seg_map_suffix, transform, augmentation, split, data_root, test_mode, size, debug)
 
     def get_default_transform(self):
         """Set the default transformation."""
 
-        default_transform = A.Compose([
-            # A.RandomCrop(height=512, width=512, p=0.2),
-            # A.PixelDropout(p=0.01),
-            # A.RandomGamma(p=0.02),
-            # A.OneOf([
-            #     A.Blur(blur_limit=3, p=1),
-            #     A.Defocus(p=0.5),
-            #     A.Spatter(p=1),
-            #     A.Emboss(p=0.7),
-            # ], p=0.01),
-            # A.OneOf([
-            #     A.CLAHE(p=0.1),
-            #     A.RandomBrightnessContrast(p=0.3),
-            #     A.HueSaturationValue(p=0.1),
-            #     A.RandomToneCurve(p=0.2),
-            # ], p=0.02),
-            # A.Downscale(scale_min=0.8, scale_max=0.99, p=0.2),
-            # A.OneOf([
-            #     A.Flip(p=0.1),
-            #     # A.ShiftScaleRotate(p=0.05),
-            #     A.Perspective(p=0.1),
-            #     # A.GridDistortion(p=0.3),
-            # ], p=0.1),
-            # A.OneOf([
-            #     A.GaussNoise(p=0.5),
-            #     A.ISONoise(p=0.5),
-            #     A.MultiplicativeNoise(p=0.5),
-            # ], p=0.1),
-            A.Resize(self.size, self.size),
-            A.Normalize(),
-            ToTensorV2()
-        ], additional_targets={'image_2': 'image'})
+        if self.augmentation:
+            default_transform = A.Compose([
+                A.RandomCrop(height=512, width=512, p=0.2),
+                # A.PixelDropout(p=0.01),
+                # A.RandomGamma(p=0.02),
+                # A.OneOf([
+                #     A.Blur(blur_limit=3, p=1),
+                #     A.Defocus(p=0.5),
+                #     A.Spatter(p=1),
+                #     A.Emboss(p=0.7),
+                # ], p=0.01),
+                # A.OneOf([
+                #     A.CLAHE(p=0.1),
+                #     A.RandomBrightnessContrast(p=0.3),
+                #     A.HueSaturationValue(p=0.1),
+                #     A.RandomToneCurve(p=0.2),
+                # ], p=0.02),
+                A.Downscale(scale_min=0.8, scale_max=0.99, p=0.2),
+                A.OneOf([
+                    A.Flip(p=0.1),
+                    # A.ShiftScaleRotate(p=0.05),
+                    A.Perspective(p=0.1),
+                    # A.GridDistortion(p=0.3),
+                ], p=0.1),
+                A.OneOf([
+                    A.GaussNoise(p=0.5),
+                    A.ISONoise(p=0.5),
+                    A.MultiplicativeNoise(p=0.5),
+                ], p=0.1),
+                A.Resize(self.size, self.size),
+                A.Normalize(),
+                ToTensorV2()
+            ], additional_targets={'image_2': 'image'})
+        else:
+            default_transform = A.Compose([
+                A.Resize(self.size, self.size),
+                A.Normalize(),
+                ToTensorV2()
+            ], additional_targets={'image_2': 'image'})
+
         return default_transform
 
     def get_test_transform(self):

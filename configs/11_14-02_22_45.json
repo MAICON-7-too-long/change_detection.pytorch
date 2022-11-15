@@ -1,5 +1,5 @@
 {
-    "id" : 0,
+    "id" : 1,
 
     "seed" : 777,
 
@@ -20,11 +20,11 @@
     },
 
     "train_config" : {
-        "epochs" : 30,
+        "epochs" : 80,
 
         "split_ratio" : 0.9,
 
-        "train_batch_size" : 32,
+        "train_batch_size" : 16,
         "test_batch_size" : 16,
 
         "loss_name" : "CrossEntropyLoss",
@@ -40,7 +40,7 @@
         },
 
         "earlystopping_target": "valid_mIoU",
-        "earlystopping_patience" : 30,
+        "earlystopping_patience" : 50,
 
         "scheduler_name" : "CosineAnnealingLR",
         "scheduler_config" : {

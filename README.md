@@ -1,348 +1,161 @@
-<h1 align="center">
-  <b>Change Detection Models</b><br>
-</h1>
-<p align="center">
-      <b>Python library with Neural Networks for Change Detection based on PyTorch.</b>
-</p>
+# 국방 AI 경진대회 코드 사용법
+- 사이버전사22 팀, 김영준, 백두현, 신성욱, 이지성
+- 닉네임 : acorn421, dudu, 신성욱신성욱, Irony
+
+
+# 핵심 파일 설명
+  - 데이터 전처리 스크립트: `./data_pre.sh` (두현)
+  - 학습 데이터 경로: `/workspace/data/01_data/train` (두현)
+  - Network 초기 값으로 사용한 공개된 Pretrained 파라미터: `./LaMa_models/big-lama-with-discr/models/best.ckpt` (영준)
+  - 공개 Pretrained 모델 기반으로 추가 Fine Tuning 학습을 한 모델 6개
+    - `./mymodel/models/last_v7.ckpt` (성욱)
+    - `./mymodel/models/last_v10.ckpt` (성욱)
+    - `./mymodel/models/last_v11.ckpt` (성욱)
+  - 학습 실행 스크립트: `./train.sh` (성욱, 영준)
+  - 학습 메인 코드: `./train.py` (영준)
+  - 테스트 실행 스크립트: `./predict.sh` (성욱)
+  - 테스트 메인 코드: `./predict.py` (성욱)
+  - 테스트 이미지, 마스크 경로: `/workspace/data/01_data/test` (두현)
+  - 테스트 결과 이미지 경로: `./final_result/output_aipg` (성욱)
+
+## 코드 구조 설명
+- 데이터 생성 부분 (두현)
+  - data_processing.py
+  - split_image 함수 : 데이터셋 항공 이미지를 전/후 이미지로 분리
+  - merge_mask 함수 : 모델 학습을 위해 데이터셋 mask 이미지를 하나의 이미지로 병합. 만약, 2번 label와 1,3번 label가 겹칠 경우 1,3번 label로 우선되게 설정
+  - vis_mask 함수 : mask 이미지를 시각적으로 보기 좋게 변환
+  - split_mask 함수 : 생성한 mask 이미지를 원래 mask 형식으로 분리
+  - vis_result 함수 : 생성한 mask 이미지를 wandb에 업로드하여 항공 이미지와 겹쳐서 보이도록 변환
+  - 
+- train 모델 부분 (영준)
+  - 
+- 앙상블 부분 (성욱)
+  - 
+
+- **최종 제출 파일 : submitted.zip**
+- **학습된 가중치 파일 : training_results/submitted_model/iter_10000.pth**
+
+## 주요 설치 library
+- requirements.txt 참고
+
+# 실행 환경 설정
+
+  - 소스 코드 및 conda 환경 설치 (다 같이)
+    ```
+    unzip military_code.zip -d military_code
+    cd ./military_code/detector
+
+    conda env create -f conda_env.yml
+    conda activate myenv
+    conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch -y
+    pip install pytorch-lightning==1.2.9
+    '''
+
+# 데이터 전처리 과정 (두현)
+  - 데이터 경로 설정
+    - /workspace/data/01_data/train  # 학습 데이터 절대경로
+    - /workspace/data/01_data/test   # 테스트 데이터 절대경로
+
+  - 데이터 전처리 스크립트 실행
+    ```bash
+    - ./data_pre.sh
+    ```
+
+  - 데이터 전처리 스크립트 내용
+    ```bash
+    #!/bin/bash
+    
+    # 가상환경 활성화
+    conda activate maicon
+    
+    # 코드가 있는 디렉토리로 이동
+    cd /workspace/change_detection.pytorch
+    
+    # train 및 test 데이터셋 전처리
+    python /workspace/change_detection.pytorch/data_processing.py split-image /workspace/data/01_data/train/x
+    python /workspace/change_detection.pytorch/data_processing.py split-image /workspace/data/01_data/test/x
+    python /workspace/change_detection.pytorch/data_processing.py merge-mask /workspace/data/01_data/train/y mask
+    python /workspace/change_detection.pytorch/data_processing.py merge-mask /workspace/data/01_data/test/y mask
+    ```
+    
+
+# 학습 실행 방법 (영준 성욱)
+  - 학습 스크립트 실행
+    ```bash
+    ./train.sh
+    ```
+    
+  - 학습 스크립트 내용
+    ```bash
+    # 11_14-02_22_45 (10) 
+    # 11_14-09_47_28
+    # 11_14-13_00_20 (4) 
+    # 11_14-15_09_51 (3) 
+
+    # 11_14-02_14_48
+    # 11_14-09_37_15 [10 dead] (14, 28) 
+
+    # 11_13-11_11_19 (last)
+
+    #!/bin/bash
+
+    # 가상환경 활성화
+    conda activate maicon
 
+    # 코드가 있는 디렉토리로 이동
+    cd /workspace/change_detection.pytorch
 
-<img src="https://raw.githubusercontent.com/likyoo/change_detection.pytorch/main/resources/model%20architecture.png" alt="model architecture" style="zoom:80%;" />
+    # 첫번째 Model 설정 기반 학습: output1.pth 획득 (영준 필요)
+    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_1.json -o output1
 
+    # 두번째 Model 설정 기반 학습: output2.pth 획득
+    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_2.json -o output2
 
-This project is inspired by **[segmentation_models.pytorch](https://github.com/qubvel/segmentation_models.pytorch)** and built based on it. 😄
+    # 세번째, 네번째 Model 설정 기반 학습: output3.pth, output4.pth 획득
+    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_3.json -o output3
 
-### 🌱 How to use <a name="use"></a>
+    # 다섯번째 Model 설정 기반 학습: output5.pth 획득
+    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_4.json -o output4
+    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_5.json -o output5
+    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_6.json -o output6
 
-Please refer to local_test.py temporarily.
+    # 여섯번째 Model 설정 기반 학습: output6.pth 획득
+    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_7.json -o output7
 
 
+# 테스트 실행 방법 (성욱)
 
-### 🔭 Models <a name="models"></a>
+  - 테스트 스크립트 실행
+    ```bash
+    ./predict.sh
+    ```
 
-#### Architectures <a name="architectures"></a>
-- [x] Unet [[paper](https://arxiv.org/abs/1505.04597)]
+  - 테스트 스크립트 내용
+    ```bash
+    #!/bin/bash
 
-- [x] Unet++ [[paper](https://arxiv.org/pdf/1807.10165.pdf)]
+    # 가상환경 활성화
+    conda activate maicon
 
-- [x] MAnet [[paper](https://ieeexplore.ieee.org/abstract/document/9201310)]
+    # 코드가 있는 디렉토리로 이동
+    cd /workspace/change_detection.pytorch
 
-- [x] Linknet [[paper](https://arxiv.org/abs/1707.03718)]
+    # 학습된 모델을 활용하여 예측 수행
+    python predict.py output1
+    python predict.py output2    
+    python predict.py output3
+    python predict.py output4
+    python predict.py output5
+    python predict.py output6
 
-- [x] FPN [[paper](http://presentations.cocodataset.org/COCO17-Stuff-FAIR.pdf)]
+    # 생성된 결과를 후처리 진행
+    python data_processing.py split-mask ./infer_res/output1/ ./infer_res/output1_split
+    python data_processing.py split-mask ./infer_res/output2/ ./infer_res/output2_split
+    python data_processing.py split-mask ./infer_res/output3/ ./infer_res/output3_split
+    python data_processing.py split-mask ./infer_res/output4/ ./infer_res/output4_split
+    python data_processing.py split-mask ./infer_res/output5/ ./infer_res/output5_split
+    python data_processing.py split-mask ./infer_res/output5/ ./infer_res/output6_split
 
-- [x] PSPNet [[paper](https://arxiv.org/abs/1612.01105)]
-
-- [x] PAN [[paper](https://arxiv.org/abs/1805.10180)]
-
-- [x] DeepLabV3 [[paper](https://arxiv.org/abs/1706.05587)]
-
-- [x] DeepLabV3+ [[paper](https://arxiv.org/abs/1802.02611)]
-
-- [x] UPerNet [[paper](https://arxiv.org/abs/1807.10221)]
-
-- [x] STANet [[paper](https://www.mdpi.com/2072-4292/12/10/1662)]
-
-#### Encoders <a name="encoders"></a>
-
-The following is a list of supported encoders in the CDP. Select the appropriate family of encoders and click to expand the table and select a specific encoder and its pre-trained weights (`encoder_name` and `encoder_weights` parameters).
-
-<details>
-<summary style="margin-left: 25px;">ResNet</summary>
-<div style="margin-left: 25px;">
-
-| Encoder   |        Weights        | Params, M |
-| --------- | :-------------------: | :-------: |
-| resnet18  | imagenet / ssl / swsl |    11M    |
-| resnet34  |       imagenet        |    21M    |
-| resnet50  | imagenet / ssl / swsl |    23M    |
-| resnet101 |       imagenet        |    42M    |
-| resnet152 |       imagenet        |    58M    |
-
-</div>
-</details>
-
-<details>
-<summary style="margin-left: 25px;">ResNeXt</summary>
-<div style="margin-left: 25px;">
-
-| Encoder           |              Weights              | Params, M |
-| ----------------- | :-------------------------------: | :-------: |
-| resnext50_32x4d   |       imagenet / ssl / swsl       |    22M    |
-| resnext101_32x4d  |            ssl / swsl             |    42M    |
-| resnext101_32x8d  | imagenet / instagram / ssl / swsl |    86M    |
-| resnext101_32x16d |      instagram / ssl / swsl       |   191M    |
-| resnext101_32x32d |             instagram             |   466M    |
-| resnext101_32x48d |             instagram             |   826M    |
-
-</div>
-</details>
-
-<details>
-<summary style="margin-left: 25px;">ResNeSt</summary>
-<div style="margin-left: 25px;">
-
-| Encoder                 | Weights  | Params, M |
-| ----------------------- | :------: | :-------: |
-| timm-resnest14d         | imagenet |    8M     |
-| timm-resnest26d         | imagenet |    15M    |
-| timm-resnest50d         | imagenet |    25M    |
-| timm-resnest101e        | imagenet |    46M    |
-| timm-resnest200e        | imagenet |    68M    |
-| timm-resnest269e        | imagenet |   108M    |
-| timm-resnest50d_4s2x40d | imagenet |    28M    |
-| timm-resnest50d_1s4x24d | imagenet |    23M    |
-
-</div>
-</details>
-
-<details>
-<summary style="margin-left: 25px;">Res2Ne(X)t</summary>
-<div style="margin-left: 25px;">
-
-| Encoder                | Weights  | Params, M |
-| ---------------------- | :------: | :-------: |
-| timm-res2net50_26w_4s  | imagenet |    23M    |
-| timm-res2net101_26w_4s | imagenet |    43M    |
-| timm-res2net50_26w_6s  | imagenet |    35M    |
-| timm-res2net50_26w_8s  | imagenet |    46M    |
-| timm-res2net50_48w_2s  | imagenet |    23M    |
-| timm-res2net50_14w_8s  | imagenet |    23M    |
-| timm-res2next50        | imagenet |    22M    |
-
-</div>
-</details>
-
-<details>
-<summary style="margin-left: 25px;">RegNet(x/y)</summary>
-<div style="margin-left: 25px;">
-
-| Encoder          | Weights  | Params, M |
-| ---------------- | :------: | :-------: |
-| timm-regnetx_002 | imagenet |    2M     |
-| timm-regnetx_004 | imagenet |    4M     |
-| timm-regnetx_006 | imagenet |    5M     |
-| timm-regnetx_008 | imagenet |    6M     |
-| timm-regnetx_016 | imagenet |    8M     |
-| timm-regnetx_032 | imagenet |    14M    |
-| timm-regnetx_040 | imagenet |    20M    |
-| timm-regnetx_064 | imagenet |    24M    |
-| timm-regnetx_080 | imagenet |    37M    |
-| timm-regnetx_120 | imagenet |    43M    |
-| timm-regnetx_160 | imagenet |    52M    |
-| timm-regnetx_320 | imagenet |   105M    |
-| timm-regnety_002 | imagenet |    2M     |
-| timm-regnety_004 | imagenet |    3M     |
-| timm-regnety_006 | imagenet |    5M     |
-| timm-regnety_008 | imagenet |    5M     |
-| timm-regnety_016 | imagenet |    10M    |
-| timm-regnety_032 | imagenet |    17M    |
-| timm-regnety_040 | imagenet |    19M    |
-| timm-regnety_064 | imagenet |    29M    |
-| timm-regnety_080 | imagenet |    37M    |
-| timm-regnety_120 | imagenet |    49M    |
-| timm-regnety_160 | imagenet |    80M    |
-| timm-regnety_320 | imagenet |   141M    |
-
-</div>
-</details>
-
-<details>
-<summary style="margin-left: 25px;">GERNet</summary>
-<div style="margin-left: 25px;">
-
-| Encoder       | Weights  | Params, M |
-| ------------- | :------: | :-------: |
-| timm-gernet_s | imagenet |    6M     |
-| timm-gernet_m | imagenet |    18M    |
-| timm-gernet_l | imagenet |    28M    |
-
-</div>
-</details>
-
-<details>
-<summary style="margin-left: 25px;">SE-Net</summary>
-<div style="margin-left: 25px;">
-
-| Encoder             | Weights  | Params, M |
-| ------------------- | :------: | :-------: |
-| senet154            | imagenet |   113M    |
-| se_resnet50         | imagenet |    26M    |
-| se_resnet101        | imagenet |    47M    |
-| se_resnet152        | imagenet |    64M    |
-| se_resnext50_32x4d  | imagenet |    25M    |
-| se_resnext101_32x4d | imagenet |    46M    |
-
-</div>
-</details>
-
-<details>
-<summary style="margin-left: 25px;">SK-ResNe(X)t</summary>
-<div style="margin-left: 25px;">
-
-| Encoder                | Weights  | Params, M |
-| ---------------------- | :------: | :-------: |
-| timm-skresnet18        | imagenet |    11M    |
-| timm-skresnet34        | imagenet |    21M    |
-| timm-skresnext50_32x4d | imagenet |    25M    |
-
-</div>
-</details>
-
-<details>
-<summary style="margin-left: 25px;">DenseNet</summary>
-<div style="margin-left: 25px;">
-
-| Encoder     | Weights  | Params, M |
-| ----------- | :------: | :-------: |
-| densenet121 | imagenet |    6M     |
-| densenet169 | imagenet |    12M    |
-| densenet201 | imagenet |    18M    |
-| densenet161 | imagenet |    26M    |
-
-</div>
-</details>
-
-<details>
-<summary style="margin-left: 25px;">Inception</summary>
-<div style="margin-left: 25px;">
-
-| Encoder           |             Weights             | Params, M |
-| ----------------- | :-----------------------------: | :-------: |
-| inceptionresnetv2 | imagenet /  imagenet+background |    54M    |
-| inceptionv4       | imagenet /  imagenet+background |    41M    |
-| xception          |            imagenet             |    22M    |
-
-</div>
-</details>
-
-<details>
-<summary style="margin-left: 25px;">EfficientNet</summary>
-<div style="margin-left: 25px;">
-
-| Encoder                 |              Weights               | Params, M |
-| ----------------------- | :--------------------------------: | :-------: |
-| efficientnet-b0         |              imagenet              |    4M     |
-| efficientnet-b1         |              imagenet              |    6M     |
-| efficientnet-b2         |              imagenet              |    7M     |
-| efficientnet-b3         |              imagenet              |    10M    |
-| efficientnet-b4         |              imagenet              |    17M    |
-| efficientnet-b5         |              imagenet              |    28M    |
-| efficientnet-b6         |              imagenet              |    40M    |
-| efficientnet-b7         |              imagenet              |    63M    |
-| timm-efficientnet-b0    | imagenet / advprop / noisy-student |    4M     |
-| timm-efficientnet-b1    | imagenet / advprop / noisy-student |    6M     |
-| timm-efficientnet-b2    | imagenet / advprop / noisy-student |    7M     |
-| timm-efficientnet-b3    | imagenet / advprop / noisy-student |    10M    |
-| timm-efficientnet-b4    | imagenet / advprop / noisy-student |    17M    |
-| timm-efficientnet-b5    | imagenet / advprop / noisy-student |    28M    |
-| timm-efficientnet-b6    | imagenet / advprop / noisy-student |    40M    |
-| timm-efficientnet-b7    | imagenet / advprop / noisy-student |    63M    |
-| timm-efficientnet-b8    |         imagenet / advprop         |    84M    |
-| timm-efficientnet-l2    |           noisy-student            |   474M    |
-| timm-efficientnet-lite0 |              imagenet              |    4M     |
-| timm-efficientnet-lite1 |              imagenet              |    5M     |
-| timm-efficientnet-lite2 |              imagenet              |    6M     |
-| timm-efficientnet-lite3 |              imagenet              |    8M     |
-| timm-efficientnet-lite4 |              imagenet              |    13M    |
-
-</div>
-</details>
-
-<details>
-<summary style="margin-left: 25px;">MobileNet</summary>
-<div style="margin-left: 25px;">
-
-| Encoder                            | Weights  | Params, M |
-| ---------------------------------- | :------: | :-------: |
-| mobilenet_v2                       | imagenet |    2M     |
-| timm-mobilenetv3_large_075         | imagenet |   1.78M   |
-| timm-mobilenetv3_large_100         | imagenet |   2.97M   |
-| timm-mobilenetv3_large_minimal_100 | imagenet |   1.41M   |
-| timm-mobilenetv3_small_075         | imagenet |   0.57M   |
-| timm-mobilenetv3_small_100         | imagenet |   0.93M   |
-| timm-mobilenetv3_small_minimal_100 | imagenet |   0.43M   |
-
-</div>
-</details>
-
-<details>
-<summary style="margin-left: 25px;">DPN</summary>
-<div style="margin-left: 25px;">
-
-| Encoder |   Weights   | Params, M |
-| ------- | :---------: | :-------: |
-| dpn68   |  imagenet   |    11M    |
-| dpn68b  | imagenet+5k |    11M    |
-| dpn92   | imagenet+5k |    34M    |
-| dpn98   |  imagenet   |    58M    |
-| dpn107  | imagenet+5k |    84M    |
-| dpn131  |  imagenet   |    76M    |
-
-</div>
-</details>
-
-<details>
-<summary style="margin-left: 25px;">VGG</summary>
-<div style="margin-left: 25px;">
-
-| Encoder  | Weights  | Params, M |
-| -------- | :------: | :-------: |
-| vgg11    | imagenet |    9M     |
-| vgg11_bn | imagenet |    9M     |
-| vgg13    | imagenet |    9M     |
-| vgg13_bn | imagenet |    9M     |
-| vgg16    | imagenet |    14M    |
-| vgg16_bn | imagenet |    14M    |
-| vgg19    | imagenet |    20M    |
-| vgg19_bn | imagenet |    20M    |
-
-</div>
-</details>
-
-
-
-### :truck: Dataset <a name="dataset"></a>
-
-- [x] [LEVIR-CD](https://justchenhao.github.io/LEVIR/)
-- [x] [SVCD](https://www.researchgate.net/publication/325470033_CHANGE_DETECTION_IN_REMOTE_SENSING_IMAGES_USING_CONDITIONAL_ADVERSARIAL_NETWORKS) [[google drive](https://drive.google.com/file/d/1GX656JqqOyBi_Ef0w65kDGVto-nHrNs9/edit) | [baidu disk](https://pan.baidu.com/s/1bU9bSRxQnlfw7OkOw7hqjA) (x8gi)] 
-- [ ] ...
-
-
-
-### 🏆 Competitions won with the library
-
-`change_detection.pytorch` has competitiveness and potential in the change detection competitions.
-[Here](https://github.com/likyoo/change_detection.pytorch/blob/main/COMPETITIONS.md) you can find competitions, names of the winners and links to their solutions.
-
-
-
-### :page_with_curl: Citing <a name="citing"></a>
-
-```
-@misc{likyoocdp:2021,
-  Author = {Kaiyu Li, Fulin Sun, Xudong Liu},
-  Title = {Change Detection Pytorch},
-  Year = {2021},
-  Publisher = {GitHub},
-  Journal = {GitHub repository},
-  Howpublished = {\url{https://github.com/likyoo/change_detection.pytorch}}
-}
-```
-
-
-
-### :books: Reference <a name="reference"></a>
-
-- [qubvel/segmentation_models.pytorch](https://github.com/qubvel/segmentation_models.pytorch)
-- [albumentations-team/albumentations](https://github.com/albumentations-team/albumentations)
-- [open-mmlab/mmsegmentation](https://github.com/open-mmlab/mmsegmentation)
-- [wenhwu/awesome-remote-sensing-change-detection](https://github.com/wenhwu/awesome-remote-sensing-change-detection)
-
-
-
-### :mailbox: Contact<a name="contact"></a>
-
-⚡⚡⚡ I am trying to build this project, if you are interested, don't hesitate to join us! 
-
-👯👯👯 Contact me at likyoo@sdust.edu.cn or pull a request directly or join our WeChat group.
-<div align=center><img src="resources/wechat.jpg" alt="wechat group" width="38%" height="38%"  style="zoom:80%;" /></div>
+    # 상기의 6가지 추론 결과를 Pixel-wise Averaging 처리하여 최종 detection 결과 생성
+    python predict_ensemble.py
+    ```
