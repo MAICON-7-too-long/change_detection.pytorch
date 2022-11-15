@@ -57,15 +57,20 @@
     - /workspace/data/01_data/test   # 테스트 데이터 절대경로
 
   - 데이터 전처리 스크립트 실행
+    ```bash
     - ./data_pre.sh
+    ```
 
   - 데이터 전처리 스크립트 내용
+    ```bash
     #!/bin/bash
     
     python /workspace/change_detection.pytorch/data_processing.py split-image /workspace/data/01_data/train/x
     python /workspace/change_detection.pytorch/data_processing.py split-image /workspace/data/01_data/test/x
     python /workspace/change_detection.pytorch/data_processing.py merge-mask /workspace/data/01_data/train/y mask
     python /workspace/change_detection.pytorch/data_processing.py merge-mask /workspace/data/01_data/test/y mask
+    ```
+    
 
 # 학습 실행 방법 (영준 성욱)
   - 학습 스크립트 실행
