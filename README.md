@@ -4,7 +4,8 @@
 
 
 # 핵심 파일 설명
-  - 학습 데이터 경로: `./my_dataset` (두현)
+  - 데이터 전처리 스크립트: `./data_pre.sh` (두현)
+  - 학습 데이터 경로: `/workspace/data/01_data/train` (두현)
   - Network 초기 값으로 사용한 공개된 Pretrained 파라미터: `./LaMa_models/big-lama-with-discr/models/best.ckpt` (영준)
   - 공개 Pretrained 모델 기반으로 추가 Fine Tuning 학습을 한 모델 6개
     - `./mymodel/models/last_v7.ckpt` (성욱)
@@ -14,11 +15,17 @@
   - 학습 메인 코드: `./train.py` (영준)
   - 테스트 실행 스크립트: `./predict.sh` (성욱)
   - 테스트 메인 코드: `./predict.py` (성욱)
-  - 테스트 이미지, 마스크 경로: `./Inpainting_Test_Raw_Mask` (두현)
+  - 테스트 이미지, 마스크 경로: `/workspace/data/01_data/test` (두현)
   - 테스트 결과 이미지 경로: `./final_result/output_aipg` (성욱)
 
 ## 코드 구조 설명
 - 데이터 생성 부분 (두현)
+  - data_processing.py
+  - split_image 함수 : 데이터셋 항공 이미지를 전/후 이미지로 분리
+  - merge_mask 함수 : 모델 학습을 위해 데이터셋 mask 이미지를 하나의 이미지로 병합. 만약, 2번 마스크와 1,3번 마스크가 겹칠 경우 1,3번 마스크로 우선되게 설정
+  - vis_mask 함수 : mask 이미지를 시각적으로 보기 좋게 변환
+  - split_mask 함수 : 생성한 mask 이미지를 원래 mask 형식으로 분리
+  - vis_result 함수 : 생성한 mask 이미지를 항공 이미지와 같이 볼 수 있도록 wandb에 업로드
   - 
 - train 모델 부분 (영준)
   - 
@@ -46,10 +53,19 @@
 
 # 데이터 전처리 과정 (두현)
   - 데이터 경로 설정
+    - /workspace/data/01_data/train  # 학습 데이터 절대경로
+    - /workspace/data/01_data/test   # 테스트 데이터 절대경로
 
   - 데이터 전처리 스크립트 실행
+    - ./data_pre.sh
 
   - 데이터 전처리 스크립트 내용
+    #!/bin/bash
+    
+    python /workspace/change_detection.pytorch/data_processing.py split-image /workspace/data/01_data/train/x
+    python /workspace/change_detection.pytorch/data_processing.py split-image /workspace/data/01_data/test/x
+    python /workspace/change_detection.pytorch/data_processing.py merge-mask /workspace/data/01_data/train/y mask
+    python /workspace/change_detection.pytorch/data_processing.py merge-mask /workspace/data/01_data/test/y mask
 
 # 학습 실행 방법 (영준 성욱)
   - 학습 스크립트 실행
