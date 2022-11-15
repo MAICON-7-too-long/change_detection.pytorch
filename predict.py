@@ -40,7 +40,7 @@ def main(run_name):
         }
     )
 
-    model = torch.load(f'./checkpoints/{run_name}.pth')
+    model = torch.load(f'{os.environ.get("CDP_DIR", "/workspace/code")}/checkpoints/{run_name}.pth')
     model.eval()
     
     valid_dataset = MAICON_Dataset(f'{os.environ.get("DATA_DIR", "/workspace/data/01_data")}/test',
@@ -67,7 +67,7 @@ def main(run_name):
         verbose=True,
     )
 
-    infer_dir = f'./infer_res/{run_name}'
+    infer_dir = f'{os.environ.get("CDP_DIR", "/workspace/code")}/infer_res/{run_name}'
     if not os.path.exists(infer_dir):
         os.makedirs(infer_dir)
 

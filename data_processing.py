@@ -45,8 +45,8 @@ def split_image(dir):
 @click.argument("dir")
 @click.argument("mask_dir")
 def merge_mask(dir, mask_dir):
-    if not os.path.exists(os.path.join(dir, "../", mask_dir)):
-        os.makedirs(os.path.join(dir, "../", mask_dir))
+    if not os.path.exists(os.path.join(mask_dir)):
+        os.makedirs(os.path.join(mask_dir))
 
     def merge(file):
         mask_file = os.path.join(dir, file)
@@ -63,7 +63,7 @@ def merge_mask(dir, mask_dir):
             
             mask_img = Image.fromarray(mask)
 
-            mask_img.save(os.path.join(dir, "../", mask_dir, file))
+            mask_img.save(os.path.join(mask_dir, file))
 
     res = Parallel(n_jobs=10)(delayed(merge)(file) for file in tqdm(os.listdir(dir)))
 
@@ -118,8 +118,8 @@ def valid_images(dir, format):
 @click.argument("dir")
 @click.argument("mask_dir")
 def split_mask(dir, mask_dir):
-    if not os.path.exists(os.path.join(dir, "../", mask_dir)):
-        os.makedirs(os.path.join(dir, "../", mask_dir))
+    if not os.path.exists(os.path.join(mask_dir)):
+        os.makedirs(os.path.join(mask_dir))
 
     def merge(file):
         mask_file = os.path.join(dir, file)
@@ -134,7 +134,7 @@ def split_mask(dir, mask_dir):
             
             mask_img = Image.fromarray(mask)
 
-            mask_img.save(os.path.join(dir, "../", mask_dir, file))
+            mask_img.save(os.path.join(mask_dir, file))
 
     res = Parallel(n_jobs=10)(delayed(merge)(file) for file in tqdm(os.listdir(dir)))
 

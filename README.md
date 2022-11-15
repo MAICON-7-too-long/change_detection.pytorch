@@ -19,46 +19,84 @@
   - 테스트 결과 이미지 경로: `./final_result/output_aipg` (성욱)
 
 ## 코드 구조 설명
-- 데이터 생성 부분 (두현)
+
+
+
+```
+project
+│   README.md                       : 프로젝트 설명 파일
+│   file001.txt                     
+│
+└───folder1
+│   │   file011.txt
+│   │   file012.txt
+│   │
+│   └───subfolder1
+│       │   file111.txt
+│       │   file112.txt
+│       │   ...
+│   
+└───folder2
+    │   file021.txt
+    │   file022.txt
+```
+
+## 코드 상세 설명
+
+### 데이터 전처리
   - data_processing.py
-  - split_image 함수 : 데이터셋 항공 이미지를 전/후 이미지로 분리
-  - merge_mask 함수 : 모델 학습을 위해 데이터셋 mask 이미지를 하나의 이미지로 병합. 만약, 2번 label와 1,3번 label가 겹칠 경우 1,3번 label로 우선되게 설정
-  - vis_mask 함수 : mask 이미지를 시각적으로 보기 좋게 변환
-  - split_mask 함수 : 생성한 mask 이미지를 원래 mask 형식으로 분리
-  - vis_result 함수 : 생성한 mask 이미지를 wandb에 업로드하여 항공 이미지와 겹쳐서 보이도록 변환
-  - 
-- train 모델 부분 (영준)
-  - 
-- 앙상블 부분 (성욱)
+    - split_image 함수 : 데이터셋 항공 이미지를 전/후 이미지로 분리
+    - merge_mask 함수 : 모델 학습을 위해 데이터셋 mask 이미지를 하나의 이미지로 병합. 만약, 2번 label와 1,3번 label가 겹칠 경우 1,3번 label로 우선되게 설정
+    - vis_mask 함수 : mask 이미지를 시각적으로 보기 좋게 변환
+    - split_mask 함수 : 생성한 mask 이미지를 원래 mask 형식으로 분리
+    - vis_result 함수 : 생성한 mask 이미지를 wandb에 업로드하여 항공 이미지와 겹쳐서 보이도록 변환
+
+### 모델 학습
+  - train.py
+
+### 모델 추론
+  - predict.py
+
+### 모델 앙상블
   - 
 
-- **최종 제출 파일 : submitted.zip**
-- **학습된 가중치 파일 : training_results/submitted_model/iter_10000.pth**
+### **최종 제출 파일 : submitted.zip**
+### **학습된 가중치 파일 : training_results/submitted_model/iter_10000.pth**
 
 ## 주요 설치 library
 - requirements.txt 참고
 
-# 실행 환경 설정
+# 실행 환경 설정 방법
 
-  - 소스 코드 및 conda 환경 설치 (다 같이)
+  - 소스 코드 및 conda 환경 설치
+    ```bash
+    cd /workspace
+    unzip code.zip -d code  # 코드 압축 해제
+
+    echo "export CDP_DIR=/workspace/code" >> ~/.bashrc  # 프로젝트 경로 환경변수 설정
+    source ~/.bashrc
+
+    cd $CDP_DIR
+
+    conda env create -n maicon    # 가상환경 생성
+    conda activate maicon         # 가상환경 활성화
+
+    pip install -r requirements.txt   # 파이썬 패키지 설정
     ```
-    unzip military_code.zip -d military_code
-    cd ./military_code/detector
 
-    conda env create -f conda_env.yml
-    conda activate myenv
-    conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch -y
-    pip install pytorch-lightning==1.2.9
-    '''
-
-# 데이터 전처리 과정 (두현)
+# 데이터 전처리 실행 방법
   - 데이터 경로 설정
-    - /workspace/data/01_data/train  # 학습 데이터 절대경로
-    - /workspace/data/01_data/test   # 테스트 데이터 절대경로
+    ```bash
+    echo "export DATA_DIR=/workspace/data/01_data" >> ~/.bashrc # 데이터 경로 환경변수 설정
+    # /workspace/data/01_data/train  : 학습 데이터 절대경로
+    # /workspace/data/01_data/test   : 테스트 데이터 절대경로
+    ```
+
+    
 
   - 데이터 전처리 스크립트 실행
     ```bash
-    - ./data_pre.sh
+    ./data_pre.sh
     ```
 
   - 데이터 전처리 스크립트 내용
@@ -69,23 +107,23 @@
     conda activate maicon
     
     # 코드가 있는 디렉토리로 이동
-    cd /workspace/change_detection.pytorch
+    cd $CDP_DIR
     
     # train 및 test 데이터셋 전처리
-    python /workspace/change_detection.pytorch/data_processing.py split-image /workspace/data/01_data/train/x
-    python /workspace/change_detection.pytorch/data_processing.py split-image /workspace/data/01_data/test/x
-    python /workspace/change_detection.pytorch/data_processing.py merge-mask /workspace/data/01_data/train/y mask
-    python /workspace/change_detection.pytorch/data_processing.py merge-mask /workspace/data/01_data/test/y mask
+    python ${CDP_DIR}/data_processing.py split-image ${DATA_DIR}/train/x
+    python ${CDP_DIR}/data_processing.py split-image ${DATA_DIR}/test/x
+    python ${CDP_DIR}/data_processing.py merge-mask ${DATA_DIR}/train/y mask
+    python ${CDP_DIR}/data_processing.py merge-mask ${DATA_DIR}/test/y mask
     ```
     
 
-# 학습 실행 방법 (영준 성욱)
-  - 학습 스크립트 실행
+# 모델 학습 실행 방법
+  - 모델 학습 스크립트 실행
     ```bash
     ./train.sh
     ```
     
-  - 학습 스크립트 내용
+  - 모델 학습 스크립트 내용
     ```bash
     # 11_14-02_22_45 (10) 
     # 11_14-09_47_28
@@ -123,14 +161,14 @@
     python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_7.json -o output7
 
 
-# 테스트 실행 방법 (성욱)
+# 모델 활용(모델 추론, 결과 후처리, 모델 앙상블) 실행 방법
 
-  - 테스트 스크립트 실행
+  - 모델 활용 스크립트 실행
     ```bash
     ./predict.sh
     ```
 
-  - 테스트 스크립트 내용
+  - 모델 활용 스크립트 내용
     ```bash
     #!/bin/bash
 
@@ -138,15 +176,15 @@
     conda activate maicon
 
     # 코드가 있는 디렉토리로 이동
-    cd /workspace/change_detection.pytorch
+    cd $CDP_DIR
 
     # 학습된 모델을 활용하여 예측 수행
-    python predict.py output1
-    python predict.py output2    
-    python predict.py output3
-    python predict.py output4
-    python predict.py output5
-    python predict.py output6
+    python $CDP_DIR/predict.py model1
+    python $CDP_DIR/predict.py model2
+    python $CDP_DIR/predict.py model3
+    python $CDP_DIR/predict.py model4
+    python $CDP_DIR/predict.py model5
+    python $CDP_DIR/predict.py model6
 
     # 생성된 결과를 후처리 진행
     python data_processing.py split-mask ./infer_res/output1/ ./infer_res/output1_split
