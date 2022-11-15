@@ -29,7 +29,7 @@
 - **학습된 가중치 파일 : training_results/submitted_model/iter_10000.pth**
 
 ## 주요 설치 library
-- requirements.txt
+- requirements.txt 참고
 
 # 실행 환경 설정
 
@@ -53,48 +53,60 @@
 
 # 학습 실행 방법 (영준 성욱)
   - 학습 스크립트 실행
-    ```
+    ```bash
     ./train.sh
     ```
     
   - 학습 스크립트 내용
-    ```
+    ```bash
+    # 11_14-02_22_45 (10) 
+    # 11_14-09_47_28
+    # 11_14-13_00_20 (4) 
+    # 11_14-15_09_51 (3) 
+
+    # 11_14-02_14_48
+    # 11_14-09_37_15 [10 dead] (14, 28) 
+
+    # 11_13-11_11_19 (last)
+
     #!/bin/bash
 
+    # 가상환경 활성화
     conda activate maicon
 
     # 코드가 있는 디렉토리로 이동
     cd /workspace/change_detection.pytorch
 
     # 첫번째 Model 설정 기반 학습: output1.pth 획득 (영준 필요)
-    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_1.json
+    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_1.json -o output1
 
     # 두번째 Model 설정 기반 학습: output2.pth 획득
-    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_2.json
+    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_2.json -o output2
 
     # 세번째, 네번째 Model 설정 기반 학습: output3.pth, output4.pth 획득
-    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_3.json
+    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_3.json -o output3
 
     # 다섯번째 Model 설정 기반 학습: output5.pth 획득
-    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_4.json
-    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_5.json
-    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_6.json
+    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_4.json -o output4
+    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_5.json -o output5
+    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_6.json -o output6
 
     # 여섯번째 Model 설정 기반 학습: output6.pth 획득
-    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_7.json
+    python train.py ./configs/MAICON_UnetPlusPlus_efficientnet_7.json -o output7
 
 
 # 테스트 실행 방법 (성욱)
 
   - 테스트 스크립트 실행
-    ```
+    ```bash
     ./predict.sh
     ```
 
   - 테스트 스크립트 내용
-    ```
+    ```bash
     #!/bin/bash
 
+    # 가상환경 활성화
     conda activate maicon
 
     # 코드가 있는 디렉토리로 이동
@@ -107,6 +119,8 @@
     python predict.py output4
     python predict.py output5
     python predict.py output6
+
+    # 생성된 결과를 후처리 진행
     python data_processing.py split-mask ./infer_res/output1/ ./infer_res/output1_split
     python data_processing.py split-mask ./infer_res/output2/ ./infer_res/output2_split
     python data_processing.py split-mask ./infer_res/output3/ ./infer_res/output3_split
@@ -114,6 +128,6 @@
     python data_processing.py split-mask ./infer_res/output5/ ./infer_res/output5_split
     python data_processing.py split-mask ./infer_res/output5/ ./infer_res/output6_split
 
-    # 상기의 3가지 추론 결과를 Pixel-wise Averaging 처리하여 최종 detection 결과 생성
+    # 상기의 6가지 추론 결과를 Pixel-wise Averaging 처리하여 최종 detection 결과 생성
     python predict_ensemble.py
     ```

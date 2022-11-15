@@ -16,7 +16,7 @@ import cv2
 import os.path as osp
 
 import change_detection_pytorch as cdp
-from change_detection_pytorch.datasets import MAICON_Dataset, LEVIR_CD_Dataset
+from change_detection_pytorch.datasets import MAICON_Dataset
 from change_detection_pytorch.utils.lr_scheduler import GradualWarmupScheduler
 
 import ssl
@@ -26,20 +26,26 @@ DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 @click.command()
 @click.argument("config_name")
-def main(config_name):
+@click.option('-o', '--output-file', 'output_file', required=False)
+@click.option('-l', '--load-model', 'load_model', required=False)
+def main(config_name, output_file, load_model):
     # load config
     with open(config_name) as config_file:
         config = json.load(config_file)
 
-    torch.cuda.manual_seed(777)
-    torch.manual_seed(777)
-    np.random.seed(777)
-    random.seed(777)
+    # remove randomness
+    torch.cuda.manual_seed(config["seed"])
+    torch.manual_seed(config["seed"])
+    np.random.seed(config["seed"])
+    random.seed(config["seed"])
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
     # wandb init
-    run_name = f'{config["dataset_name"]}_{config["model_name"]}_{datetime.now().strftime("%m_%d-%H_%M_%S")}'
+    if config["id"] > 0:
+        run_name = f'{config["dataset_name"]}_{config["model_name"]}_{config["id"]}'
+    else:
+        run_name = f'{config["dataset_name"]}_{config["model_name"]}_{datetime.now().strftime("%m_%d-%H_%M_%S")}'
 
     wandb.login()
     run = wandb.init(
@@ -49,6 +55,8 @@ def main(config_name):
     )
 
     # Model configure
+    if load_model:
+        model = torch.load(f'./checkpoints/{load_model}.pth')
     if config["model_name"] == "Unet":
         model = cdp.Unet(
             **config["model_config"]
@@ -78,62 +86,44 @@ def main(config_name):
     
     # Dataset configure
     if config["dataset_name"] == "MAICON":
-        train_dataset = MAICON_Dataset('/workspace/data/01_data/train/',
+        train_dataset = MAICON_Dataset(f'{os.environ.get("DATA_DIR", "/workspace/data/01_data")}/train',
                                     sub_dir_1='input1',
                                     sub_dir_2='input2',
                                     img_suffix='.png',
-                                    ann_dir='/workspace/data/01_data/train/mask',
+                                    ann_dir=f'{os.environ.get("DATA_DIR", "/workspace/data/01_data")}/train/mask',
                                     size=config["dataset_config"]["image_size"],
+                                    augmentation=config["dataset_config"]["augmentation"],
                                     debug=False)
 
-        valid_dataset = MAICON_Dataset('/workspace/data/01_data/test',
+        test_dataset = MAICON_Dataset(f'{os.environ.get("DATA_DIR", "/workspace/data/01_data")}/test',
                                         sub_dir_1='input1',
                                         sub_dir_2='input2',
                                         img_suffix='.png',
-                                        # size=768,
-                                        debug=False,
-                                        test_mode=True)
-                                        
-    elif config["dataset_name"] == "LEVIR_CD":
-        train_dataset = LEVIR_CD_Dataset('/etc/maicon/data/LEVIR-CD/train',
-                                        sub_dir_1='A',
-                                        sub_dir_2='B',
-                                        img_suffix='.png',
-                                        ann_dir='/etc/maicon/data/LEVIR-CD/train/label',
-                                        debug=False)
-
-        valid_dataset = LEVIR_CD_Dataset('/etc/maicon/data/LEVIR-CD/test',
-                                        sub_dir_1='A',
-                                        sub_dir_2='B',
-                                        img_suffix='.png',
-                                        ann_dir='/etc/maicon/data/LEVIR-CD/test/label',
                                         debug=False,
                                         test_mode=True)
     else:
         raise Exception("Wrong dataset type")
 
     # Split train dataset to train/test
-    train_size = int(0.9 * len(train_dataset))
-    test_size = len(train_dataset) - train_size
-    # train_dataset, test_dataset = torch.utils.data.random_split(train_dataset, [train_size, test_size], generator=torch.Generator().manual_seed(42))
-    train_dataset, test_dataset = torch.utils.data.random_split(train_dataset, [train_size, test_size])
+    train_size = int(config["train_config"]["split_ratio"] * len(train_dataset))
+    valid_size = len(train_dataset) - train_size
+    train_dataset, valid_dataset = torch.utils.data.random_split(train_dataset, [train_size, valid_size])
     
     # DataLoader config
-    train_loader = DataLoader(train_dataset, batch_size=config["dataset_config"]["train_batch_size"], shuffle=True, num_workers=4)
-    test_loader = DataLoader(test_dataset, batch_size=config["dataset_config"]["train_batch_size"], shuffle=True, num_workers=4)
-    valid_loader = DataLoader(valid_dataset, batch_size=config["dataset_config"]["test_batch_size"], shuffle=False, num_workers=4)
+    train_loader = DataLoader(train_dataset, batch_size=config["train_config"]["train_batch_size"], shuffle=True, num_workers=4)
+    valid_loader = DataLoader(valid_dataset, batch_size=config["train_config"]["train_batch_size"], shuffle=True, num_workers=4)
+    test_loader = DataLoader(test_dataset, batch_size=config["train_config"]["test_batch_size"], shuffle=False, num_workers=4)
 
     # Loss config
-    if config["train_config"]["loss"] == "CrossEntropyLoss":
-        loss = cdp.utils.losses.CrossEntropyLoss()
-    elif config["train_config"]["loss"] == "DiceLoss":
-        loss = cdp.losses.DiceLoss(mode=cdp.losses.MULTICLASS_MODE, from_logits = True)
+    if config["train_config"]["loss_name"] == "CrossEntropyLoss":
+        loss = cdp.utils.losses.CrossEntropyLoss(**config["train_config"]["loss_config"])
+    elif config["train_config"]["loss_name"] == "DiceLoss":
+        loss = cdp.losses.DiceLoss(mode=cdp.losses.MULTICLASS_MODE, from_logits = True, **config["train_config"]["loss_config"])
     else:
         raise Exception("Wrong loss type")
 
     # Metrics config
     metrics = [
-        # cdp.utils.metrics.IoU(activation='softmax2d'),
         cdp.utils.my_metrics.Iou(class_num=0),
         cdp.utils.my_metrics.Iou(class_num=1),
         cdp.utils.my_metrics.Iou(class_num=2),
@@ -141,33 +131,31 @@ def main(config_name):
     ]
 
     # Optimizer config
-    if config["train_config"]["optimizer"] == "Adam":
+    if config["train_config"]["optimizer_name"] == "Adam":
         optimizer = torch.optim.Adam([
-            dict(params=model.parameters(), lr=config["train_config"]["lr"]),
+            dict(params=model.parameters(), **config["train_config"]["loss_config"]),
         ])
-    elif config["train_config"]["optimizer"] == "NAdam":
+    elif config["train_config"]["optimizer_name"] == "NAdam":
         optimizer = torch.optim.NAdam([
-            dict(params=model.parameters(), lr=config["train_config"]["lr"]),
+            dict(params=model.parameters(), **config["train_config"]["loss_config"]),
         ])
-    elif config["train_config"]["optimizer"] == "AdamW":
+    elif config["train_config"]["optimizer_name"] == "AdamW":
         optimizer = torch.optim.AdamW([
-            dict(params=model.parameters(), lr=config["train_config"]["lr"], weight_decay = config["train_config"]["weight_decay"]),
+            dict(params=model.parameters(), **config["train_config"]["loss_config"]),
         ])
     else:
-        raise Exception("Wrong optimizer")
+        raise Exception("Wrong optimizer type")
 
-    # Default scheduler
-    # scheduler:
-    # name: CosineAnnealingLR
-    # args:
-    #     T_max: 100
-    #     eta_min: 0
+    # Scheduler config
+    if config["train_config"]["scheduler_name"] == "CosineAnnealingLR":
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, config["train_config"]["scheduler_config"])
+    elif config["train_config"]["scheduler_name"] == "MultiStepLR":
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, config["train_config"]["scheduler_config"])
+    else:
+        raise Exception("Wrong scheduler type")
+    
 
-    scheduler_steplr = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max = 100, eta_min = 0)
-    # scheduler_steplr = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[50, ], gamma=config["train_config"]["gamma"])
-
-    # create epoch runners
-    # it is a simple loop of iterating over dataloader`s samples
+    # Create epoch runners
     train_epoch = cdp.utils.train.TrainEpoch(
         model,
         loss=loss,
@@ -190,56 +178,66 @@ def main(config_name):
     )
     
     # Early stopper
-    early_stopping = cdp.utils.early_stopper.EarlyStopping(patience = 50, path = f'./checkpoints/{run_name}.pth', verbose = True)
+    early_stopping = cdp.utils.early_stopper.EarlyStopping(patience = config["train_config"]["earlystopping_patience"], path = f'./checkpoints/{run_name}_best.pth', verbose = True)
     
     # Inference for test images
     infer_dir = f'./infer_res/{run_name}'
     if not os.path.exists(infer_dir):
         os.makedirs(infer_dir)
 
+    if config["train_config"]["debug_predict"]:
+        debug_dir = f'./debug_predict/{run_name}'
+        if not os.path.exists(debug_dir):
+            os.makedirs(debug_dir)
+
     # train model for epochs
-    # max_score = 0
     MAX_EPOCH = config["train_config"]["epochs"]
 
     for i in range(MAX_EPOCH):
         print('\nEpoch: {}'.format(i))
         train_logs = train_epoch.run(train_loader, i, infer_dir)
-        # ! we don't have ground truth in MAICON
-        test_logs = valid_epoch.run(test_loader, i, infer_dir)
-        # valid_logs = valid_epoch.run(valid_loader)
+        valid_logs = valid_epoch.run(valid_loader, i, infer_dir)
         
         # Generate mask for debug
-        # for (x1, x2, filename) in valid_loader:
-        #     x1, x2 = valid_epoch.check_tensor(x1, False), valid_epoch.check_tensor(x2, False)
-        #     x1, x2 = x1.float(), x2.float()
-        #     x1, x2 = x1.to(DEVICE), x2.to(DEVICE)
-        #     y_pred = model.forward(x1, x2)
-            
-        #     y_pred = torch.argmax(y_pred, dim=1).squeeze().cpu().numpy().round()
-        #     y_pred = y_pred * 85
-
-        #     for (fname, xx1, xx2, yy_pred) in zip(filename, x1, x2, y_pred):
-        #         fname = fname.split('.')[0] + f'_batch{i}.png'
-
-        #         cv2.imwrite(osp.join(infer_dir, fname), yy_pred)
+        if config["train_config"]["debug_predict"]:
+            for (x1, x2, filename) in test_loader:
+                x1, x2 = valid_epoch.check_tensor(x1, False), valid_epoch.check_tensor(x2, False)
+                x1, x2 = x1.float(), x2.float()
+                x1, x2 = x1.to(DEVICE), x2.to(DEVICE)
+                y_pred = model.forward(x1, x2)
                 
-        #     break
-        
-        scheduler_steplr.step()
+                y_pred = torch.argmax(y_pred, dim=1).squeeze().cpu().numpy().round()
+                y_pred = y_pred * 85
 
-        early_stopping(1-test_logs['valid_mIoU'], model)
-        # early_stopping(test_logs['valid_DiceLoss'], model)
+                for (fname, xx1, xx2, yy_pred) in zip(filename, x1, x2, y_pred):
+                    fname = fname.split('.')[0] + f'_batch{i}.png'
+
+                    cv2.imwrite(osp.join(debug_dir, fname), yy_pred)
+                    
+                break
+        
+        scheduler.step()
+
+        if config["train_config"]["earlystopping_target"].find("IoU") == -1:
+            early_stopping(test_logs[config["train_config"]["earlystopping_target"]], model)
+        else:
+            early_stopping(1-test_logs[config["train_config"]["earlystopping_target"]], model)
+        
         
         if early_stopping.early_stop:
-            print('\nEarly Stopping')
+            print('\nEarly Stopping...')
             wandb.alert(
                 title = "Early Stopping",
                 text = run_name,
                 level = AlertLevel.INFO
             )
+
             break
 
-        torch.save(model, f'./checkpoints/{run_name}_last.pth')
+        torch.save(model, f'./checkpoints/{run_name}_epoch_{i}.pth')
+
+    if output_file:
+        torch.save(model, f'./checkpoints/{output_file}.pth')
 
     # Save model as wandb artifact
     model_artifact = wandb.Artifact(name=run_name, type='model')
@@ -247,11 +245,10 @@ def main(config_name):
     run.log_artifact(model_artifact)
 
     # Generate mask image
-    best_model = torch.load(f'./checkpoints/{run_name}.pth')
-    valid_epoch.predict(best_model, valid_loader, save_dir=infer_dir)
-    # valid_epoch.infer_vis(valid_loader, save=True, slide=False, save_dir=infer_dir)
+    # best_model = torch.load(f'./checkpoints/{run_name}_best.pth')
+    # valid_epoch.predict(best_model, valid_loader, save_dir=infer_dir)
 
-    # Send wandb alert
+    # Send finish alert to wandb
     wandb.alert(
         title = "Train finished",
         text = run_name,
