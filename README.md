@@ -189,7 +189,7 @@
     conda activate maicon
 
     # 코드가 있는 디렉토리로 이동
-    cd /workspace/change_detection.pytorch
+    cd $CDP_DIR
 
     # 모델 학습 수행
     # 모델 1 학습
