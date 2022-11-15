@@ -12,8 +12,10 @@
   - 데이터 전처리 스크립트 : `data_pre.sh`
   - 데이터 전후처리 메인 코드 : `data_processing.py`
 
-  - Network 초기 값으로 사용한 공개된 Pretrained 파라미터:
-    `./LaMa_models/big-lama-with-discr/models/best.ckpt`
+  - Network 초기 값으로 사용한 공개된 Pretrained 파라미터 :
+    - `./pretrained_model/tf_efficientnet_b5_ns-6f26d0cf.pth`
+    - `./pretrained_model/tf_efficientnet_b7_ns-1dbc32de.pth`
+    
   - 공개 Pretrained 모델 기반으로 Fine Tuning 학습을 한 모델 6개 : 
     - `./checkpoints/model1.pth`
     - `./checkpoints/model2.pth`
@@ -22,8 +24,8 @@
     - `./checkpoints/model5.pth`
     - `./checkpoints/model6.pth`
 
-  - 학습 실행 스크립트: `train.sh`
-  - 학습 메인 코드: `train.py`
+  - 학습 실행 스크립트 : `train.sh`
+  - 학습 메인 코드 : `train.py`
 
   - 테스트 실행 스크립트: `predict.sh`
   - 테스트 메인 코드: `predict.py`
