@@ -4,23 +4,37 @@
 
 
 # 핵심 파일 설명
-  - 데이터 전처리 스크립트: `./data_pre.sh` (두현)
-  - 학습 데이터 경로: `/workspace/data/01_data/train` (두현)
-  - Network 초기 값으로 사용한 공개된 Pretrained 파라미터: `./LaMa_models/big-lama-with-discr/models/best.ckpt` (영준)
-  - 공개 Pretrained 모델 기반으로 추가 Fine Tuning 학습을 한 모델 6개
-    - `./mymodel/models/last_v7.ckpt` (성욱)
-    - `./mymodel/models/last_v10.ckpt` (성욱)
-    - `./mymodel/models/last_v11.ckpt` (성욱)
-  - 학습 실행 스크립트: `./train.sh` (성욱, 영준)
-  - 학습 메인 코드: `./train.py` (영준)
-  - 테스트 실행 스크립트: `./predict.sh` (성욱)
-  - 테스트 메인 코드: `./predict.py` (성욱)
-  - 테스트 이미지, 마스크 경로: `/workspace/data/01_data/test` (두현)
-  - 테스트 결과 이미지 경로: `./final_result/output_aipg` (성욱)
+  - 학습 데이터 경로 : `/workspace/data/01_data/train`
+  - 테스트 데이터 경로 : `/workspace/data/01_data/test`
+
+  - 프로젝트 경로 : `/workspace/Final_Submission`
+
+  - 데이터 전처리 스크립트 : `data_pre.sh`
+  - 데이터 전후처리 메인 코드 : `data_processing.py`
+
+  - Network 초기 값으로 사용한 공개된 Pretrained 파라미터:
+    `./LaMa_models/big-lama-with-discr/models/best.ckpt`
+  - 공개 Pretrained 모델 기반으로 Fine Tuning 학습을 한 모델 6개 : 
+    - `./checkpoints/model1.pth`
+    - `./checkpoints/model2.pth`
+    - `./checkpoints/model3.pth`
+    - `./checkpoints/model4.pth`
+    - `./checkpoints/model5.pth`
+    - `./checkpoints/model6.pth`
+
+  - 학습 실행 스크립트: `train.sh`
+  - 학습 메인 코드: `train.py`
+
+  - 테스트 실행 스크립트: `predict.sh`
+  - 테스트 메인 코드: `predict.py`
+
+
+  - 테스트 결과 이미지 경로: `./infer_res/`
+  - 최종 테스트 결과 이미지 경로 `./infer_res/final_mask`
+
+  
 
 ## 코드 구조 설명
-
-
 
 ```
 project
@@ -67,13 +81,12 @@ project
 - requirements.txt 참고
 
 # 실행 환경 설정 방법
-
   - 소스 코드 및 conda 환경 설치
     ```bash
     cd /workspace
-    unzip code.zip -d code  # 코드 압축 해제
+    unzip code.zip -d Final_Submission  # 코드 압축 해제
 
-    echo "export CDP_DIR=/workspace/code" >> ~/.bashrc  # 프로젝트 경로 환경변수 설정
+    echo "export CDP_DIR=/workspace/Final_Submission" >> ~/.bashrc  # 프로젝트 경로 환경변수 설정
     source ~/.bashrc
 
     cd $CDP_DIR
@@ -81,7 +94,10 @@ project
     conda env create -n maicon    # 가상환경 생성
     conda activate maicon         # 가상환경 활성화
 
-    pip install -r requirements.txt   # 파이썬 패키지 설정
+    pip install -r requirements.txt   # 파이썬 패키지 설치
+
+    wandb login # wandb login
+    # 로그인 안내 창에서 다음과 같은 API key 입력 : d811788ed8439e74dd656fa7d663ae56a050a412
     ```
 
 # 데이터 전처리 실행 방법
@@ -91,8 +107,6 @@ project
     # /workspace/data/01_data/train  : 학습 데이터 절대경로
     # /workspace/data/01_data/test   : 테스트 데이터 절대경로
     ```
-
-    
 
   - 데이터 전처리 스크립트 실행
     ```bash
@@ -105,15 +119,14 @@ project
     
     # 가상환경 활성화
     conda activate maicon
-    
+
     # 코드가 있는 디렉토리로 이동
     cd $CDP_DIR
-    
+
     # train 및 test 데이터셋 전처리
-    python ${CDP_DIR}/data_processing.py split-image ${DATA_DIR}/train/x
-    python ${CDP_DIR}/data_processing.py split-image ${DATA_DIR}/test/x
-    python ${CDP_DIR}/data_processing.py merge-mask ${DATA_DIR}/train/y mask
-    python ${CDP_DIR}/data_processing.py merge-mask ${DATA_DIR}/test/y mask
+    python $CDP_DIR/data_processing.py split-image $DATA_DIR/train/x
+    python $CDP_DIR/data_processing.py split-image $DATA_DIR/test/x
+    python $CDP_DIR/data_processing.py merge-mask $DATA_DIR/train/y $DATA_DIR/train/mask
     ```
     
 
@@ -125,15 +138,17 @@ project
     
   - 모델 학습 스크립트 내용
     ```bash
-    # 11_14-02_22_45 (10) 
-    # 11_14-09_47_28
-    # 11_14-13_00_20 (4) 
-    # 11_14-15_09_51 (3) 
+    # 11_14-02_22_45 0~14 (11 : 10) model1.config /// mv model_epoch_10 /// model1.pth
+    # 11_14-09_47_28 15~44  model2-1.config
+    # 11_14-13_00_20 45~63 (5 : 49) model2.config /// model2_epoch_4.pth /// model2.pth
+    # 11_14-15_09_51 64~67 (4 : 67) model3.config /// model3_epoch_3.pth // model3.pth
 
-    # 11_14-02_14_48
-    # 11_14-09_37_15 [10 dead] (14, 28) 
+    # 11_14-02_14_48 0~10 model4-1.config
+    # 11_14-09_37_15 11~39 (15 : 25, 29 : 39) 
+              # model4-and-5.config /// model4-and-5_epoch_14.pth // model4.pth
+              # model4-and-5.config /// model4-and-5_epoch_28.pth // model5.pth
 
-    # 11_13-11_11_19 (last)
+    # 11_13-11_11_19 0~59 (60 : 59) model6.config /// model6_epoch_59.pth // model6.pth
 
     #!/bin/bash
 
@@ -176,7 +191,7 @@ project
     conda activate maicon
 
     # 코드가 있는 디렉토리로 이동
-    cd $CDP_DIR
+    cd /workspace/change_detection.pytorch
 
     # 학습된 모델을 활용하여 예측 수행
     python $CDP_DIR/predict.py model1
@@ -187,13 +202,22 @@ project
     python $CDP_DIR/predict.py model6
 
     # 생성된 결과를 후처리 진행
-    python data_processing.py split-mask ./infer_res/output1/ ./infer_res/output1_split
-    python data_processing.py split-mask ./infer_res/output2/ ./infer_res/output2_split
-    python data_processing.py split-mask ./infer_res/output3/ ./infer_res/output3_split
-    python data_processing.py split-mask ./infer_res/output4/ ./infer_res/output4_split
-    python data_processing.py split-mask ./infer_res/output5/ ./infer_res/output5_split
-    python data_processing.py split-mask ./infer_res/output5/ ./infer_res/output6_split
+    python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model1 $CDP_DIR/infer_res/model1_split
+    python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model2 $CDP_DIR/infer_res/model2_split
+    python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model3 $CDP_DIR/infer_res/model3_split
+    python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model4 $CDP_DIR/infer_res/model4_split
+    python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model5 $CDP_DIR/infer_res/model5_split
+    python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model5 $CDP_DIR/infer_res/model6_split
+
+    # 추론 결과 수합
+    mkdir $CDP_DIR/infer_res/submitted_mask
+    mv $CDP_DIR/infer_res/model1_split $CDP_DIR/infer_res/submitted_mask
+    mv $CDP_DIR/infer_res/model2_split $CDP_DIR/infer_res/submitted_mask
+    mv $CDP_DIR/infer_res/model3_split $CDP_DIR/infer_res/submitted_mask
+    mv $CDP_DIR/infer_res/model4_split $CDP_DIR/infer_res/submitted_mask
+    mv $CDP_DIR/infer_res/model5_split $CDP_DIR/infer_res/submitted_mask
+    mv $CDP_DIR/infer_res/model6_split $CDP_DIR/infer_res/submitted_mask
 
     # 상기의 6가지 추론 결과를 Pixel-wise Averaging 처리하여 최종 detection 결과 생성
-    python predict_ensemble.py
+    python $CDP_DIR/predict_ensemble.py $CDP_DIR/infer_res/submitted_mask $CDP_DIR/infer_res/final_mask
     ```

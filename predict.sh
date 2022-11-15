@@ -15,12 +15,21 @@ python $CDP_DIR/predict.py model5
 python $CDP_DIR/predict.py model6
 
 # 생성된 결과를 후처리 진행
-python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model1 CDP_DIR/infer_res/model1_split
-python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model2/ CDP_DIR/infer_res/model2_split
-python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model3/ CDP_DIR/infer_res/model3_split
-python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model4/ CDP_DIR/infer_res/model4_split
-python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model5/ CDP_DIR/infer_res/model5_split
-python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model5/ CDP_DIR/infer_res/model6_split
+python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model1 $CDP_DIR/infer_res/model1_split
+python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model2 $CDP_DIR/infer_res/model2_split
+python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model3 $CDP_DIR/infer_res/model3_split
+python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model4 $CDP_DIR/infer_res/model4_split
+python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model5 $CDP_DIR/infer_res/model5_split
+python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model5 $CDP_DIR/infer_res/model6_split
+
+# 추론 결과 수합
+mkdir $CDP_DIR/infer_res/submitted_mask
+mv $CDP_DIR/infer_res/model1_split $CDP_DIR/infer_res/submitted_mask
+mv $CDP_DIR/infer_res/model2_split $CDP_DIR/infer_res/submitted_mask
+mv $CDP_DIR/infer_res/model3_split $CDP_DIR/infer_res/submitted_mask
+mv $CDP_DIR/infer_res/model4_split $CDP_DIR/infer_res/submitted_mask
+mv $CDP_DIR/infer_res/model5_split $CDP_DIR/infer_res/submitted_mask
+mv $CDP_DIR/infer_res/model6_split $CDP_DIR/infer_res/submitted_mask
 
 # 상기의 6가지 추론 결과를 Pixel-wise Averaging 처리하여 최종 detection 결과 생성
-python $CDP_DIR/predict_ensemble.py
+python $CDP_DIR/predict_ensemble.py $CDP_DIR/infer_res/submitted_mask $CDP_DIR/infer_res/final_mask

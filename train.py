@@ -219,9 +219,9 @@ def main(config_name, output_file, load_model):
         scheduler.step()
 
         if config["train_config"]["earlystopping_target"].find("IoU") == -1:
-            early_stopping(test_logs[config["train_config"]["earlystopping_target"]], model)
+            early_stopping(valid_logs[config["train_config"]["earlystopping_target"]], model)
         else:
-            early_stopping(1-test_logs[config["train_config"]["earlystopping_target"]], model)
+            early_stopping(1-valid_logs[config["train_config"]["earlystopping_target"]], model)
         
         
         if early_stopping.early_stop:
