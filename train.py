@@ -56,7 +56,7 @@ def main(config_name, output_file, load_model):
 
     # Model configure
     if load_model:
-        model = torch.load(f'./checkpoints/{load_model}.pth')
+        model = torch.load(f'{os.environ.get("CDP_DIR", "/workspace/Final_Submission")}/checkpoints/{load_model}.pth')
     if config["model_name"] == "Unet":
         model = cdp.Unet(
             **config["model_config"]
@@ -178,15 +178,15 @@ def main(config_name, output_file, load_model):
     )
     
     # Early stopper
-    early_stopping = cdp.utils.early_stopper.EarlyStopping(patience = config["train_config"]["earlystopping_patience"], path = f'./checkpoints/{run_name}_best.pth', verbose = True)
+    early_stopping = cdp.utils.early_stopper.EarlyStopping(patience = config["train_config"]["earlystopping_patience"], path = f'{os.environ.get("CDP_DIR", "/workspace/Final_Submission")}/checkpoints/{run_name}_best.pth', verbose = True)
     
     # Inference for test images
-    infer_dir = f'./infer_res/{run_name}'
+    infer_dir = f'{os.environ.get("CDP_DIR", "/workspace/Final_Submission")}/infer_res/{run_name}'
     if not os.path.exists(infer_dir):
         os.makedirs(infer_dir)
 
     if config["train_config"]["debug_predict"]:
-        debug_dir = f'./debug_predict/{run_name}'
+        debug_dir = f'{os.environ.get("CDP_DIR", "/workspace/Final_Submission")}/debug_predict/{run_name}'
         if not os.path.exists(debug_dir):
             os.makedirs(debug_dir)
 
@@ -234,18 +234,18 @@ def main(config_name, output_file, load_model):
 
             break
 
-        torch.save(model, f'./checkpoints/{run_name}_epoch_{i}.pth')
+        torch.save(model, f'{os.environ.get("CDP_DIR", "/workspace/Final_Submission")}/checkpoints/{run_name}_epoch_{i}.pth')
 
     if output_file:
-        torch.save(model, f'./checkpoints/{output_file}.pth')
+        torch.save(model, f'{os.environ.get("CDP_DIR", "/workspace/Final_Submission")}/checkpoints/{output_file}_last.pth')
 
     # Save model as wandb artifact
     model_artifact = wandb.Artifact(name=run_name, type='model')
-    model_artifact.add_file(local_path=f'./checkpoints/{run_name}.pth', name='model_weights')
+    model_artifact.add_file(local_path=f'{os.environ.get("CDP_DIR", "/workspace/Final_Submission")}/checkpoints/{run_name}.pth', name='model_weights')
     run.log_artifact(model_artifact)
 
     # Generate mask image
-    # best_model = torch.load(f'./checkpoints/{run_name}_best.pth')
+    # best_model = torch.load(f'{os.environ.get("CDP_DIR", "/workspace/Final_Submission")}/checkpoints/{run_name}_best.pth')
     # valid_epoch.predict(best_model, valid_loader, save_dir=infer_dir)
 
     # Send finish alert to wandb
