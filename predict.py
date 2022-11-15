@@ -12,12 +12,23 @@ from change_detection_pytorch.datasets import MAICON_Dataset
 import change_detection_pytorch as cdp
 
 import wandb
+import numpy as np
+import random
+
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 @click.command()
 @click.argument("run_name")
 def main(run_name):
+
+    torch.cuda.manual_seed(777)
+    torch.manual_seed(777)
+    np.random.seed(777)
+    random.seed(777)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
     wandb.login()
     wandb.init(
         project="maicon-change-detection-submissions",

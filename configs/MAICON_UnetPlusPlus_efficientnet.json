@@ -3,7 +3,7 @@
     "model_config" : {
         "in_channels" : 3,
         "classes" : 4,
-        "encoder_name" : "timm-efficientnet-b7",
+        "encoder_name" : "timm-efficientnet-b5",
         "encoder_weights" : "noisy-student",
         "siam_encoder" : true,
         "fusion_form" : "concat"
@@ -11,16 +11,16 @@
     "dataset_name" : "MAICON",
     "dataset_config" : {
         "train_batch_size" : 16,
-        "test_batch_size" : 8,
+        "test_batch_size" : 16,
         "image_size" : 256,
-        "augmentation" : true
+        "augmentation" : false
     },
     "train_config" : {
         "loss" : "CrossEntropyLoss",
         "optimizer" : "AdamW",
         "lr" : 0.0005,
         "gamma" : 0.1,
-        "epochs" : 120,
+        "epochs" : 20,
         "weight_decay" : 5.0e-02,
         "weights" : 0.2
     }
