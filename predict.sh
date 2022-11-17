@@ -20,7 +20,7 @@ python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model2 $CDP_DIR
 python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model3 $CDP_DIR/infer_res/model3_split
 python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model4 $CDP_DIR/infer_res/model4_split
 python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model5 $CDP_DIR/infer_res/model5_split
-python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model5 $CDP_DIR/infer_res/model6_split
+python $CDP_DIR/data_processing.py split-mask $CDP_DIR/infer_res/model6 $CDP_DIR/infer_res/model6_split
 
 # 추론 결과 수합
 mkdir $CDP_DIR/infer_res/submitted_mask
